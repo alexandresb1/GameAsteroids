@@ -1,33 +1,33 @@
-const GameFunctions = (function() {
+const GameFunctions = (function () {
 
     // INÍCIO: VARIÁVEIS GLOBAIS DO JOGO.
-    const ship      = { x: 0, y: 0, angle: 0, velocityX: 0, velocityY: 0, radius: 10, invulnerable: false, invulnerableTime: 0 };
-    const bullets   = [];
+    const ship = { x: 0, y: 0, angle: 0, velocityX: 0, velocityY: 0, radius: 10, invulnerable: false, invulnerableTime: 0 };
+    const bullets = [];
     const asteroids = [];
-    const powerups  = [];
-    const keys      = {};
-    let score       = 0;
-    let lives       = 3;
-    let gameState   = 'menu'; // 'menu', 'playing', 'paused', 'gameover'
-    
+    const powerups = [];
+    const keys = {};
+    let score = 0;
+    let lives = 3;
+    let gameState = 'menu'; // 'menu', 'playing', 'paused', 'gameover'
+
     // SISTEMA DE DIFICULDADE PROGRESSIVA
     const BASE_MAX_ASTEROIDS = 3; // Começar com 3 asteroides
     const MAX_ASTEROIDS_LIMIT = 30; // Limite máximo de asteroides
     const ASTEROID_INCREASE_INTERVAL = 300; // A cada 300 pontos aumenta asteroides
-    
+
     const BASE_HITS_PER_ASTEROID = 1; // Hits base para destruir asteroide
     const MAX_HITS_PER_ASTEROID = 7; // Máximo de hits por asteroide
     const HITS_INCREASE_INTERVAL = 1500; // A cada 1500 pontos aumenta hits
-    
+
     const BASE_SPEED_MULTIPLIER = 1.0; // Velocidade base
     const MAX_SPEED_MULTIPLIER = 1.6; // Velocidade máxima (1.6x)
     const SPEED_INCREASE_INTERVAL = 1000; // A cada 1000 pontos aumenta velocidade
-    
+
     // Variáveis dinâmicas de dificuldade
     let currentMaxAsteroids = BASE_MAX_ASTEROIDS;
     let currentHitsPerAsteroid = BASE_HITS_PER_ASTEROID;
     let currentSpeedMultiplier = BASE_SPEED_MULTIPLIER;
-    
+
     const INVULNERABLE_DURATION = 2.0; // 2 segundos
     let lastFrameTime = 0;
 
@@ -83,7 +83,7 @@ const GameFunctions = (function() {
     // INÍCIO: IMPORTAÇÃO DOS SPRITES.
     // Logo após as variáveis globais:
     let shipSprite = new Image();
-    
+
     // Função para carregar sprite da nave selecionada
     function loadSelectedShipSprite() {
         const selectedSpritePath = ProgressionSystem.getSelectedShipSprite();
@@ -96,7 +96,7 @@ const GameFunctions = (function() {
         currentShipAttributes = SHIP_ATTRIBUTES[selectedShip] || SHIP_ATTRIBUTES[1];
         hitsRemaining = currentShipAttributes.resistance; // Reset hits
     }
-    
+
     // Carregar sprite e atributos iniciais
     loadSelectedShipSprite();
     loadSelectedShipAttributes();
@@ -118,13 +118,13 @@ const GameFunctions = (function() {
     // SPRITES DOS POWERUPS
     const healthPowerupSprite = new Image();
     healthPowerupSprite.src = "assets/sprites/powerup-health.png";
-    
+
     const doubleShotPowerupSprite = new Image();
     doubleShotPowerupSprite.src = "assets/sprites/powerup-double-shot.png";
-    
+
     const tripleShotPowerupSprite = new Image();
     tripleShotPowerupSprite.src = "assets/sprites/powerup-triple-shot.png";
-    
+
     const piercingShotPowerupSprite = new Image();
     piercingShotPowerupSprite.src = "assets/sprites/powerup-piercing-shot.png";
 
@@ -134,42 +134,42 @@ const GameFunctions = (function() {
     let lastScoreThreshold = 0; // Último threshold de score que mudou o background
     const SCORE_THRESHOLD_FOR_BG_CHANGE = 2000; // A cada 2000 pontos muda o background
     const TOTAL_BACKGROUNDS = 9; // Total de backgrounds disponíveis (map-bg-1 até map-bg-5)
-    
+
     // Função para carregar um background específico
     function loadBackground(index) {
         currentBackgroundIndex = index;
         bgImage.src = `assets/images/map-bg-${index}.jpg`;
         console.log(`Background alterado para: map-bg-${index}.jpg`);
     }
-    
+
     // Função para selecionar background aleatório
     function selectRandomBackground() {
         const randomIndex = Math.floor(Math.random() * TOTAL_BACKGROUNDS) + 1; // 1 a 5
         loadBackground(randomIndex);
         return randomIndex;
     }
-    
+
     // Função para verificar se deve mudar o background baseado no score
     function checkBackgroundChange() {
         const currentThreshold = Math.floor(score / SCORE_THRESHOLD_FOR_BG_CHANGE);
-        
+
         // Se passou de um threshold para outro, muda o background
         if (currentThreshold > lastScoreThreshold) {
             lastScoreThreshold = currentThreshold;
-            
+
             // Selecionar próximo background de forma cíclica
             let nextBgIndex = currentBackgroundIndex + 1;
             if (nextBgIndex > TOTAL_BACKGROUNDS) {
                 nextBgIndex = 1; // Volta para o primeiro
             }
-            
+
             loadBackground(nextBgIndex);
-            
+
             // Mostrar mensagem de mudança de mapa (opcional)
             console.log(`Novo mapa desbloqueado! Score: ${score}`);
         }
     }
-    
+
     // Carregar background inicial aleatório
     selectRandomBackground();
 
@@ -181,17 +181,17 @@ const GameFunctions = (function() {
         // Atualizar quantidade máxima de asteroides (a cada 300 pontos)
         const asteroidLevel = Math.floor(score / ASTEROID_INCREASE_INTERVAL);
         currentMaxAsteroids = Math.min(
-            BASE_MAX_ASTEROIDS + asteroidLevel, 
+            BASE_MAX_ASTEROIDS + asteroidLevel,
             MAX_ASTEROIDS_LIMIT
         );
-        
+
         // Atualizar hits necessários por asteroide (a cada 1500 pontos)
         const hitsLevel = Math.floor(score / HITS_INCREASE_INTERVAL);
         currentHitsPerAsteroid = Math.min(
             BASE_HITS_PER_ASTEROID + hitsLevel,
             MAX_HITS_PER_ASTEROID
         );
-        
+
         // Atualizar multiplicador de velocidade (a cada 1000 pontos)
         const speedLevel = Math.floor(score / SPEED_INCREASE_INTERVAL);
         const speedIncrease = speedLevel * 0.1; // 0.1x por nível
@@ -202,9 +202,9 @@ const GameFunctions = (function() {
     }
 
     // INÍCIO: COMANDOS E CONTROLES DO JOGO.
-    const KEY_LEFT  = 'ArrowLeft';
+    const KEY_LEFT = 'ArrowLeft';
     const KEY_RIGHT = 'ArrowRight';
-    const KEY_UP    = 'ArrowUp';
+    const KEY_UP = 'ArrowUp';
     const KEY_SHOOT = ' '; // BARRA DE ESPAÇO
     const KEY_SPECIAL = 'x'; // TECLA X para especial
     const KEY_PAUSE = 'Escape'; // TECLA ESC
@@ -242,23 +242,23 @@ const GameFunctions = (function() {
     function InitControls() {
         $(document).keydown(e => {
             keys[e.key] = true;
-            if(e.key === KEY_SHOOT && gameState === 'playing') {
+            if (e.key === KEY_SHOOT && gameState === 'playing') {
                 const currentTime = performance.now() / 1000.0; // Converter para segundos
                 const cooldown = getFireRateCooldown();
-                
+
                 // Verificar se pode atirar baseado na cadência
                 if (currentTime - lastShotTime >= cooldown) {
                     Shoot();
                     lastShotTime = currentTime;
                 }
             }
-            if(e.key === KEY_SPECIAL && gameState === 'playing') {
+            if (e.key === KEY_SPECIAL && gameState === 'playing') {
                 // Usar especial se disponível
                 if (specialCooldown <= 0) {
                     useSpecial();
                 }
             }
-            if(e.key === KEY_PAUSE) togglePause();
+            if (e.key === KEY_PAUSE) togglePause();
         });
         $(document).keyup(e => keys[e.key] = false);
     }
@@ -266,8 +266,8 @@ const GameFunctions = (function() {
     function Shoot() {
         const baseVelX = Math.sin(ship.angle) * BULLET_SPEED;
         const baseVelY = -Math.cos(ship.angle) * BULLET_SPEED;
-        
-        switch(currentAmmoType) {
+
+        switch (currentAmmoType) {
             case 'double':
                 // Tiro duplo diagonal
                 const offset = 0.3; // Ângulo de separação
@@ -294,7 +294,7 @@ const GameFunctions = (function() {
                     angle: ship.angle + offset
                 });
                 break;
-                
+
             case 'triple':
                 // Tiro triplo (centro + diagonais)
                 const spread = 0.25;
@@ -332,7 +332,7 @@ const GameFunctions = (function() {
                     angle: ship.angle + spread
                 });
                 break;
-                
+
             case 'piercing':
                 // Tiro perfurante (maior e azul)
                 bullets.push({
@@ -346,7 +346,7 @@ const GameFunctions = (function() {
                     piercing: true
                 });
                 break;
-                
+
             default: // 'normal'
                 bullets.push({
                     x: ship.x,
@@ -361,18 +361,23 @@ const GameFunctions = (function() {
                 });
                 break;
         }
+
+        // Tocar som de tiro baseado no tipo de munição
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playShoot(currentAmmoType);
+        }
     }
 
     function useSpecial() {
         // Ativar cooldown
         specialCooldown = SPECIAL_COOLDOWN_TIME;
-        
+
         // Criar shockwave - onda de tiros em todas as direções
         const angleStep = (Math.PI * 2) / SHOCKWAVE_BULLETS; // Dividir 360° pelos tiros
-        
+
         for (let i = 0; i < SHOCKWAVE_BULLETS; i++) {
             const angle = i * angleStep;
-            
+
             bullets.push({
                 x: ship.x,
                 y: ship.y,
@@ -385,7 +390,12 @@ const GameFunctions = (function() {
                 angle: angle
             });
         }
-        
+
+        // Tocar som de shockwave
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playShoot('shockwave');
+        }
+
         console.log('ESPECIAL: Shockwave ativado!'); // Feedback temporário
     }
 
@@ -400,13 +410,13 @@ const GameFunctions = (function() {
         // Escolher uma região de spawn (bordas + cantos para mais variedade)
         const spawnRegion = Math.floor(Math.random() * 8);
         let x, y;
-        
+
         // Aplicar multiplicador de velocidade dinâmico
         const baseSpeed = ASTEROID_MIN_SPEED + Math.random() * (ASTEROID_MAX_SPEED - ASTEROID_MIN_SPEED);
         const speed = baseSpeed * currentSpeedMultiplier;
 
         // Definir posição de spawn baseada na região
-        switch(spawnRegion) {
+        switch (spawnRegion) {
             case 0: // Topo
                 x = Math.random() * canvasWidth;
                 y = -50;
@@ -453,11 +463,11 @@ const GameFunctions = (function() {
         // Adicionar variação angular (até ±45 graus da direção do centro)
         const maxAngleVariation = Math.PI / 4; // 45 graus
         const angleVariation = (Math.random() - 0.5) * maxAngleVariation;
-        
+
         // Aplicar rotação à direção
         const cos = Math.cos(angleVariation);
         const sin = Math.sin(angleVariation);
-        
+
         const finalDirX = baseDirNormX * cos - baseDirNormY * sin;
         const finalDirY = baseDirNormX * sin + baseDirNormY * cos;
 
@@ -486,11 +496,11 @@ const GameFunctions = (function() {
     // SISTEMA DE POWERUPS
     function spawnPowerup(x, y) {
         if (Math.random() > POWERUP_DROP_CHANCE) return; // Só spawna se passar na chance
-        
+
         const powerupTypes = Object.keys(POWERUP_TYPES);
         const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
         const config = POWERUP_TYPES[randomType];
-        
+
         powerups.push({
             x: x,
             y: y,
@@ -508,18 +518,18 @@ const GameFunctions = (function() {
             // Atualizar lifetime e efeito de pulsação
             powerup.lifetime -= deltaTime;
             powerup.pulseTimer += deltaTime * 4; // Velocidade da pulsação
-            
+
             // Remover powerup expirado
             if (powerup.lifetime <= 0) {
                 powerups.splice(index, 1);
                 return;
             }
-            
+
             // Verificar colisão com a nave
             const dx = powerup.x - ship.x;
             const dy = powerup.y - ship.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
-            
+
             if (distance < powerup.size + ship.radius) {
                 collectPowerup(powerup);
                 powerups.splice(index, 1);
@@ -528,25 +538,30 @@ const GameFunctions = (function() {
     }
 
     function collectPowerup(powerup) {
-        switch(powerup.type) {
+        // Tocar som de powerup
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playPowerup();
+        }
+
+        switch (powerup.type) {
             case 'DOUBLE_SHOT':
                 currentAmmoType = 'double';
                 ammoTimer = SPECIAL_AMMO_DURATION;
                 showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
                 break;
-                
+
             case 'TRIPLE_SHOT':
                 currentAmmoType = 'triple';
                 ammoTimer = SPECIAL_AMMO_DURATION;
                 showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
                 break;
-                
+
             case 'PIERCING_SHOT':
                 currentAmmoType = 'piercing';
                 ammoTimer = SPECIAL_AMMO_DURATION;
                 showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
                 break;
-                
+
             case 'EXTRA_LIFE':
                 lives++;
                 showPowerupMessage(`${powerup.name}! Vidas: ${lives}`);
@@ -581,7 +596,7 @@ const GameFunctions = (function() {
 
     function SpawnInitialAsteroids() {
         // Spawnar asteroides até atingir o máximo inicial (3)
-        while(asteroids.length < BASE_MAX_ASTEROIDS) {
+        while (asteroids.length < BASE_MAX_ASTEROIDS) {
             SpawnAsteroid();
         }
     }
@@ -592,10 +607,10 @@ const GameFunctions = (function() {
     function updateShip(width, height, deltaTime) {
         const rotationSpeed = getShipRotationSpeed();
         const acceleration = getShipAcceleration();
-        
-        if(keys[KEY_LEFT]) ship.angle -= rotationSpeed * deltaTime;
-        if(keys[KEY_RIGHT]) ship.angle += rotationSpeed * deltaTime;
-        if(keys[KEY_UP]){
+
+        if (keys[KEY_LEFT]) ship.angle -= rotationSpeed * deltaTime;
+        if (keys[KEY_RIGHT]) ship.angle += rotationSpeed * deltaTime;
+        if (keys[KEY_UP]) {
             ship.velocityX += Math.sin(ship.angle) * acceleration * deltaTime;
             ship.velocityY -= Math.cos(ship.angle) * acceleration * deltaTime;
         }
@@ -604,14 +619,14 @@ const GameFunctions = (function() {
         const frictionFactor = Math.pow(SHIP_FRICTION, deltaTime * 60);
         ship.velocityX *= frictionFactor;
         ship.velocityY *= frictionFactor;
-        
+
         ship.x += ship.velocityX * deltaTime;
         ship.y += ship.velocityY * deltaTime;
 
-        if(ship.x > width) ship.x = 0;
-        if(ship.x < 0) ship.x = width;
-        if(ship.y > height) ship.y = 0;
-        if(ship.y < 0) ship.y = height;
+        if (ship.x > width) ship.x = 0;
+        if (ship.x < 0) ship.x = width;
+        if (ship.y > height) ship.y = 0;
+        if (ship.y < 0) ship.y = height;
 
         // Gerenciar invulnerabilidade
         if (ship.invulnerable) {
@@ -627,17 +642,17 @@ const GameFunctions = (function() {
             a.x += a.velocityX * deltaTime;
             a.y += a.velocityY * deltaTime;
 
-            if(a.x > width) a.x = 0;
-            if(a.x < 0) a.x = width;
-            if(a.y > height) a.y = 0;
-            if(a.y < 0) a.y = height;
+            if (a.x > width) a.x = 0;
+            if (a.x < 0) a.x = width;
+            if (a.y > height) a.y = 0;
+            if (a.y < 0) a.y = height;
 
             // Colisão com a nave (só se não estiver invulnerável)
             if (!ship.invulnerable) {
                 const shipDx = a.x - ship.x;
                 const shipDy = a.y - ship.y;
-                const shipDistance = Math.sqrt(shipDx*shipDx + shipDy*shipDy);
-                if(shipDistance < a.radius + ship.radius && gameState === 'playing'){
+                const shipDistance = Math.sqrt(shipDx * shipDx + shipDy * shipDy);
+                if (shipDistance < a.radius + ship.radius && gameState === 'playing') {
                     shipHit();
                     return;
                 }
@@ -647,30 +662,35 @@ const GameFunctions = (function() {
             bullets.forEach((b, bi) => {
                 const dx = a.x - b.x;
                 const dy = a.y - b.y;
-                const distance = Math.sqrt(dx*dx + dy*dy);
-                if(distance < a.radius + b.radius && a.hitCooldown <= 0){
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                if (distance < a.radius + b.radius && a.hitCooldown <= 0) {
                     // Reduzir vida do asteroide
                     a.currentHealth--;
                     a.hitCooldown = 0.1; // Cooldown de 0.1 segundos para evitar múltiplos hits
-                    
+
                     // Remove tiro apenas se não for perfurante
                     if (!b.piercing) {
-                        bullets.splice(bi,1);
+                        bullets.splice(bi, 1);
                     }
-                    
+
                     // Verificar se o asteroide foi destruído
                     if (a.currentHealth <= 0) {
+                        // Tocar som de explosão
+                        if (typeof SoundEffectsManager !== 'undefined') {
+                            SoundEffectsManager.playExplosion();
+                        }
+
                         // Spawnar powerup na posição do asteroide destruído
                         spawnPowerup(a.x, a.y);
-                        
+
                         // Remove asteroide
-                        asteroids.splice(ai,1);
-                        
+                        asteroids.splice(ai, 1);
+
                         score += 10;
-                        
+
                         // Verificar se deve mudar o background baseado no score
                         checkBackgroundChange();
-                        
+
                         // Atualizar dificuldade baseada no score
                         updateDifficulty();
 
@@ -679,7 +699,7 @@ const GameFunctions = (function() {
                     }
                 }
             });
-            
+
             // Atualizar cooldown de hit
             if (a.hitCooldown > 0) {
                 a.hitCooldown -= deltaTime;
@@ -691,8 +711,8 @@ const GameFunctions = (function() {
         bullets.forEach((b, bi) => {
             b.x += b.velocityX * deltaTime;
             b.y += b.velocityY * deltaTime;
-            if(b.x < 0 || b.x > width || b.y < 0 || b.y > height){
-                bullets.splice(bi,1);
+            if (b.x < 0 || b.x > width || b.y < 0 || b.y > height) {
+                bullets.splice(bi, 1);
             }
         });
     }
@@ -702,11 +722,16 @@ const GameFunctions = (function() {
     // ------------------------
     function shipHit() {
         hitsRemaining--;
-        
+
+        // Tocar som de hit (apenas se não for hit fatal)
+        if (hitsRemaining > 0 && typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playHit();
+        }
+
         // Ativar invulnerabilidade temporária
         ship.invulnerable = true;
         ship.invulnerableTime = INVULNERABLE_DURATION;
-        
+
         // Verificar se perdeu uma vida
         if (hitsRemaining <= 0) {
             shipDestroyed();
@@ -715,7 +740,12 @@ const GameFunctions = (function() {
 
     function shipDestroyed() {
         lives--;
-        
+
+        // Tocar som de explosão quando a nave é destruída
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playExplosion();
+        }
+
         if (lives <= 0) {
             gameOver();
         } else {
@@ -727,16 +757,16 @@ const GameFunctions = (function() {
         // Reposicionar nave no centro
         const canvasWidth = $(window).width();
         const canvasHeight = $(window).height();
-        
+
         ship.x = canvasWidth / 2;
         ship.y = canvasHeight / 2;
         ship.angle = 0;
         ship.velocityX = 0;
         ship.velocityY = 0;
-        
+
         // Resetar hits restantes baseado na resistência da nave
         hitsRemaining = currentShipAttributes.resistance;
-        
+
         // Ativar invulnerabilidade temporária
         ship.invulnerable = true;
         ship.invulnerableTime = INVULNERABLE_DURATION;
@@ -744,7 +774,7 @@ const GameFunctions = (function() {
 
     function gameOver() {
         gameState = 'gameover';
-        
+
         // Registrar pontuação no sistema de progressão
         if (typeof ProgressionSystem !== 'undefined') {
             const isNewRecord = ProgressionSystem.updateScore(score);
@@ -752,7 +782,7 @@ const GameFunctions = (function() {
                 console.log('Novo recorde!', score);
             }
         }
-        
+
         // Esconder botão de pause
         if (typeof AudioUI !== 'undefined') {
             AudioUI.hidePauseButton();
@@ -818,7 +848,7 @@ const GameFunctions = (function() {
 
     function backToMenu() {
         gameState = 'menu';
-        
+
         // Forçar esconder todas as interfaces do jogo
         if (typeof PauseHUD !== 'undefined') {
             PauseHUD.forceHide();
@@ -829,20 +859,20 @@ const GameFunctions = (function() {
         if (typeof CustomizeHUD !== 'undefined') {
             CustomizeHUD.hide();
         }
-        
+
         // Resetar jogo completamente (sem asteroides)
         resetGameToMenu();
-        
+
         // Esconder botão de pause
         if (typeof AudioUI !== 'undefined') {
             AudioUI.hidePauseButton();
         }
-        
+
         // Mostrar tela inicial
         if (typeof StartScreenHUD !== 'undefined') {
             StartScreenHUD.show();
         }
-        
+
         // Tocar música do menu
         AudioManager.playMenuMusic();
     }
@@ -949,9 +979,9 @@ const GameFunctions = (function() {
         if (lastFrameTime === 0) lastFrameTime = currentTime;
         const deltaTime = (currentTime - lastFrameTime) / 1000.0;
         lastFrameTime = currentTime;
-        
+
         // Limitar delta time para evitar saltos grandes (ex: quando a aba fica inativa)
-        const clampedDeltaTime = Math.min(deltaTime, 1/30); // máximo 30fps
+        const clampedDeltaTime = Math.min(deltaTime, 1 / 30); // máximo 30fps
 
         const width = $(window).width();
         const height = $(window).height();
@@ -962,10 +992,10 @@ const GameFunctions = (function() {
         updatePowerups(clampedDeltaTime);
         updateAmmoTimer(clampedDeltaTime);
         updateSpecialCooldown(clampedDeltaTime);
-        
+
         // Garantir que sempre tenhamos o número máximo de asteroides (APENAS quando estiver jogando)
         if (gameState === 'playing') {
-            while(asteroids.length < currentMaxAsteroids) {
+            while (asteroids.length < currentMaxAsteroids) {
                 SpawnAsteroid();
             }
         }
@@ -1009,8 +1039,8 @@ const GameFunctions = (function() {
 
         // NAVE COM SPRITE
         if (
-        (!ship.invulnerable || Math.floor(ship.invulnerableTime * 5) % 2 === 0) &&
-        shipSprite.complete
+            (!ship.invulnerable || Math.floor(ship.invulnerableTime * 5) % 2 === 0) &&
+            shipSprite.complete
         ) {
             ctx.save();
             ctx.translate(ship.x, ship.y);
@@ -1037,39 +1067,39 @@ const GameFunctions = (function() {
 
         // ASTEROIDES
         // ASTEROIDES COM SPRITES E BARRINHA DE VIDA
-            asteroids.forEach(a => {
-                if (a.sprite && a.sprite.complete) {
-                    const size = a.radius * 2; // largura e altura baseadas no raio
-                    ctx.drawImage(a.sprite, a.x - a.radius, a.y - a.radius, size, size);
-                } else {
-                    // fallback (caso sprite não carregue)
-                    ctx.fillStyle = 'gray';
-                    ctx.beginPath();
-                    ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                
-                // Desenhar barrinha de vida apenas se o asteroide tem mais de 1 hit
-                if (a.maxHealth > 1) {
-                    const barWidth = a.radius * 1.5;
-                    const barHeight = 4;
-                    const barY = a.y - a.radius - 10;
-                    
-                    // Fundo da barra (vermelho)
-                    ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
-                    ctx.fillRect(a.x - barWidth/2, barY, barWidth, barHeight);
-                    
-                    // Vida atual (verde)
-                    const healthPercent = a.currentHealth / a.maxHealth;
-                    ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
-                    ctx.fillRect(a.x - barWidth/2, barY, barWidth * healthPercent, barHeight);
-                    
-                    // Borda da barra
-                    ctx.strokeStyle = 'white';
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(a.x - barWidth/2, barY, barWidth, barHeight);
-                }
-            });
+        asteroids.forEach(a => {
+            if (a.sprite && a.sprite.complete) {
+                const size = a.radius * 2; // largura e altura baseadas no raio
+                ctx.drawImage(a.sprite, a.x - a.radius, a.y - a.radius, size, size);
+            } else {
+                // fallback (caso sprite não carregue)
+                ctx.fillStyle = 'gray';
+                ctx.beginPath();
+                ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Desenhar barrinha de vida apenas se o asteroide tem mais de 1 hit
+            if (a.maxHealth > 1) {
+                const barWidth = a.radius * 1.5;
+                const barHeight = 4;
+                const barY = a.y - a.radius - 10;
+
+                // Fundo da barra (vermelho)
+                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                ctx.fillRect(a.x - barWidth / 2, barY, barWidth, barHeight);
+
+                // Vida atual (verde)
+                const healthPercent = a.currentHealth / a.maxHealth;
+                ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+                ctx.fillRect(a.x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
+
+                // Borda da barra
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(a.x - barWidth / 2, barY, barWidth, barHeight);
+            }
+        });
 
 
         // TIROS
@@ -1079,11 +1109,11 @@ const GameFunctions = (function() {
                 ctx.save();
                 ctx.translate(b.x, b.y);
                 ctx.rotate(b.angle);
-                
+
                 // Tamanho do sprite da bala (ajuste conforme necessário)
                 const bulletWidth = 8;
                 const bulletHeight = 16;
-                
+
                 ctx.drawImage(
                     bulletSprite,
                     -bulletWidth / 2,
@@ -1091,7 +1121,7 @@ const GameFunctions = (function() {
                     bulletWidth,
                     bulletHeight
                 );
-                
+
                 ctx.restore();
             } else {
                 // Fallback para círculo (tiro perfurante e caso sprite não carregue)
@@ -1107,17 +1137,17 @@ const GameFunctions = (function() {
             // Efeito de pulsação
             const pulseScale = 1 + Math.sin(powerup.pulseTimer) * 0.3;
             const currentSize = powerup.size * pulseScale;
-            
+
             // Diminuir opacidade quando está expirando
             const opacity = powerup.lifetime < 3 ? powerup.lifetime / 3 : 1;
-            
+
             ctx.globalAlpha = opacity;
-            
+
             // Usar sprites para todos os powerups
             let powerupSprite = null;
             let spriteSize = currentSize * 2; // Tamanho do sprite baseado no size do powerup
-            
-            switch(powerup.type) {
+
+            switch (powerup.type) {
                 case 'EXTRA_LIFE':
                     powerupSprite = healthPowerupSprite;
                     break;
@@ -1131,7 +1161,7 @@ const GameFunctions = (function() {
                     powerupSprite = piercingShotPowerupSprite;
                     break;
             }
-            
+
             if (powerupSprite && powerupSprite.complete) {
                 // Desenhar sprite do powerup
                 ctx.drawImage(
@@ -1147,13 +1177,13 @@ const GameFunctions = (function() {
                 ctx.beginPath();
                 ctx.arc(powerup.x, powerup.y, currentSize, 0, Math.PI * 2);
                 ctx.fill();
-                
+
                 // Borda branca para destaque
                 ctx.strokeStyle = 'white';
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
-            
+
             ctx.globalAlpha = 1; // Resetar alpha
         });
 
@@ -1162,12 +1192,12 @@ const GameFunctions = (function() {
         ctx.font = '20px Arial';
         ctx.fillText(`Score: ${score}`, 20, 30);
         ctx.fillText(`Vidas: ${lives}`, 20, 60);
-        
+
         // Mostrar informação do mapa atual
         ctx.fillStyle = '#aaaaaa';
         ctx.font = '16px Arial';
         ctx.fillText(`Mapa: ${currentBackgroundIndex}/5`, 20, canvas.height - 20);
-        
+
         // Mostrar hits restantes (resistência)
         if (hitsRemaining < currentShipAttributes.resistance) {
             ctx.fillStyle = hitsRemaining === 1 ? '#ff4444' : '#ffaa44'; // Vermelho se 1 hit, laranja se 2
@@ -1175,14 +1205,14 @@ const GameFunctions = (function() {
             ctx.fillStyle = '#44ff44'; // Verde se full
         }
         ctx.fillText(`Integridade: ${hitsRemaining}/${currentShipAttributes.resistance}`, 20, 90);
-        
+
         // Mostrar informações de dificuldade
         ctx.fillStyle = '#ffaa00';
         ctx.font = '14px Arial';
         ctx.fillText(`Asteroides: ${asteroids.length}/${currentMaxAsteroids}`, 20, 120);
         ctx.fillText(`Hits/Asteroide: ${currentHitsPerAsteroid}`, 20, 140);
         ctx.fillText(`Velocidade: ${currentSpeedMultiplier.toFixed(1)}x`, 20, 160);
-        
+
         // Mostrar munição especial ativa
         if (currentAmmoType !== 'normal' && ammoTimer > 0) {
             const ammoInfo = POWERUP_TYPES[currentAmmoType.toUpperCase() + '_SHOT'];
@@ -1208,25 +1238,25 @@ const GameFunctions = (function() {
     // INCIALIZA OS CONTROLES.
     InitControls();
 
-    return { 
-        update, 
-        draw, 
+    return {
+        update,
+        draw,
         SpawnAsteroid,
-        SpawnInitialAsteroids, 
-        Shoot, 
-        start, 
-        restart, 
+        SpawnInitialAsteroids,
+        Shoot,
+        start,
+        restart,
         pause,
         resume,
         togglePause,
         backToMenu,
         gameOver,
-        ship, 
-        bullets, 
-        asteroids, 
-        keys, 
-        score, 
-        lives, 
-        gameState 
+        ship,
+        bullets,
+        asteroids,
+        keys,
+        score,
+        lives,
+        gameState
     };
 })();
