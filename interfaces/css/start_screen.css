@@ -1,0 +1,56 @@
+/* Background específico para tela inicial */
+#startScreenOverlay.interface-overlay {
+    background: url('../../assets/images/menu-background.jpg') no-repeat center center;
+    background-size: cover;
+}
+
+/* Container centralizado */
+.start-screen-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* Título */
+.game-title {
+    font-size: 5rem;
+    margin: 0 0 20px 0;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    letter-spacing: 0.1em;
+}
+
+/* Instruções */
+.instructions {
+    font-size: 1.2rem;
+    margin: 0 0 40px 0;
+    line-height: 1.6;
+}
+.instructions p {
+    margin: 5px 0;
+}
+
+/* Container dos botões */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: center;
+}
+
+/* Botões como imagem */
+.menu-button-image {
+    width: 220px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* Efeito hover */
+.menu-button-image:hover {
+    transform: scale(1.05);
+}
+
+.game-logo {
+    max-width: 400px;
+    object-fit: cover;
+}

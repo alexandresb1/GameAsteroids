@@ -1,0 +1,37 @@
+/* Background específico para game over */
+#gameOverOverlay.interface-overlay {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+.game-over-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.game-over-title {
+    font-size: 4rem;
+    margin: 0 0 20px 0;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+}
+
+.final-score {
+    font-size: 1.5rem;
+    margin: 0 0 30px 0;
+}
+
+.restart-button {
+    padding: 15px 30px;
+    font-size: 1.2rem;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.restart-button:hover {
+    background-color: #45a049;
+}

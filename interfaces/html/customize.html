@@ -1,0 +1,72 @@
+<div id="customizeOverlay" class="interface-overlay">
+    <div class="customize-container">
+        <h1 class="customize-title">PERSONALIZAÇÃO</h1>
+        
+        <!-- Seção de Naves -->
+        <div class="ships-section">
+            <h2 class="section-title">NAVES</h2>
+            
+            <div class="ships-grid">
+                <!-- Nave 1 - Sempre desbloqueada -->
+                <div class="ship-card" data-ship="1" data-unlock-score="0">
+                    <div class="ship-preview">
+                        <img src="assets/sprites/Ship-1.png" alt="PIONEER-X1" class="ship-image">
+                    </div>
+                    <div class="ship-name">PIONEER-X1</div>
+                    <div class="ship-status unlocked">DESBLOQUEADA</div>
+                </div>
+
+                <!-- Nave 2 -->
+                <div class="ship-card" data-ship="2" data-unlock-score="200">
+                    <div class="ship-preview">
+                        <img src="assets/sprites/Ship-2.png" alt="VIPER-DELTA" class="ship-image">
+                    </div>
+                    <div class="ship-name">VIPER-DELTA</div>
+                    <div class="ship-status locked">Score: 200</div>
+                </div>
+
+                <!-- Nave 3 -->
+                <div class="ship-card" data-ship="3" data-unlock-score="400">
+                    <div class="ship-preview">
+                        <img src="assets/sprites/Ship-3.png" alt="TITAN-FORGE" class="ship-image">
+                    </div>
+                    <div class="ship-name">TITAN-FORGE</div>
+                    <div class="ship-status locked">Score: 400</div>
+                </div>
+
+                <!-- Nave 4 -->
+                <div class="ship-card" data-ship="4" data-unlock-score="800">
+                    <div class="ship-preview">
+                        <img src="assets/sprites/Ship-4.png" alt="GREEN-REAPER" class="ship-image">
+                    </div>
+                    <div class="ship-name">GREEN-REAPER</div>
+                    <div class="ship-status locked">Score: 800</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Informações do Jogador -->
+        <div class="player-info">
+            <div class="current-score">
+                <span class="label">Melhor Score:</span>
+                <span id="bestScore" class="value">0</span>
+            </div>
+            <div class="selected-ship">
+                <span class="label">Nave Selecionada:</span>
+                <span id="selectedShipName" class="value">PIONEER-X1</span>
+            </div>
+        </div>
+
+        <!-- Tooltip para informações das naves -->
+        <div id="shipTooltip" class="ship-tooltip">
+            <div class="tooltip-content">Passe o mouse sobre uma nave para ver detalhes</div>
+        </div>
+
+        <!-- Botões -->
+        <div class="customize-buttons">
+            <button id="backToMenuBtn" class="customize-button back-button">
+                ← Voltar ao Menu
+            </button>
+        </div>
+    </div>
+</div>

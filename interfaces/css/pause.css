@@ -1,0 +1,116 @@
+/* Interface de Pause */
+
+/* Overlay específico para pause - sobrescreve o background da .interface-overlay */
+#pauseOverlay.interface-overlay {
+    background: rgba(0, 0, 0, 0.8) !important;
+}
+.pause-container {
+    background: rgba(0, 0, 0, 0.95);
+    border: 3px solid #00ffff;
+    border-radius: 15px;
+    padding: 40px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    max-width: 400px;
+    width: 90%;
+}
+
+.pause-title {
+    color: #00ffff;
+    font-family: 'Courier New', monospace;
+    font-size: 2.5em;
+    margin: 0 0 30px 0;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    letter-spacing: 2px;
+}
+
+.pause-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.pause-button {
+    background: linear-gradient(45deg, #1a1a2e, #16213e);
+    border: 2px solid #00ffff;
+    color: white;
+    padding: 15px 25px;
+    font-size: 1.2em;
+    font-family: 'Courier New', monospace;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pause-button:hover {
+    background: linear-gradient(45deg, #00ffff, #0066cc);
+    color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+}
+
+.pause-button:active {
+    transform: translateY(0);
+}
+
+.resume-button:hover {
+    background: linear-gradient(45deg, #00ff00, #00cc00);
+}
+
+.menu-button:hover {
+    background: linear-gradient(45deg, #ff6600, #cc4400);
+}
+
+.pause-instructions {
+    color: #cccccc;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    margin-top: 20px;
+}
+
+.pause-instructions kbd {
+    background: #333;
+    border: 1px solid #666;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: 'Courier New', monospace;
+    color: #00ffff;
+    font-weight: bold;
+}
+
+/* Animações */
+@keyframes pauseSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.pause-container {
+    animation: pauseSlideIn 0.4s ease-out;
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .pause-container {
+        padding: 20px;
+        margin: 20px;
+    }
+    
+    .pause-title {
+        font-size: 2em;
+    }
+    
+    .pause-button {
+        padding: 12px 20px;
+        font-size: 1em;
+    }
+}
