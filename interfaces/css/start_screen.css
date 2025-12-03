@@ -10,24 +10,15 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
+    gap: 30px;
 }
 
-/* Título */
-.game-title {
-    font-size: 5rem;
-    margin: 0 0 20px 0;
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-    letter-spacing: 0.1em;
-}
-
-/* Instruções */
-.instructions {
-    font-size: 1.2rem;
-    margin: 0 0 40px 0;
-    line-height: 1.6;
-}
-.instructions p {
-    margin: 5px 0;
+/* Logo do jogo */
+.game-logo {
+    max-width: 500px;
+    width: 90%;
+    object-fit: contain;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 0, 0.5));
 }
 
 /* Container dos botões */
@@ -36,21 +27,97 @@
     flex-direction: column;
     gap: 20px;
     align-items: center;
-}
-
-/* Botões como imagem */
-.menu-button-image {
-    width: 220px;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-}
-
-/* Efeito hover */
-.menu-button-image:hover {
-    transform: scale(1.05);
-}
-
-.game-logo {
+    width: 100%;
     max-width: 400px;
-    object-fit: cover;
+}
+
+/* Botões do menu */
+.menu-button {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    border: 3px solid #00ffff;
+    color: #00ffff;
+    padding: 18px 40px;
+    font-size: 1em;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    width: 100%;
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.menu-button:hover::before {
+    left: 100%;
+}
+
+.menu-button:hover {
+    background: linear-gradient(145deg, #00ffff, #0099cc);
+    color: #000;
+    border-color: #ffff00;
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(0, 255, 255, 0.6);
+}
+
+.menu-button:active {
+    transform: translateY(-1px) scale(0.98);
+}
+
+.button-icon {
+    font-size: 1.3em;
+    font-weight: bold;
+}
+
+.button-text {
+    font-size: 0.9em;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+    .game-logo {
+        max-width: 300px;
+    }
+
+    .menu-buttons {
+        max-width: 280px;
+    }
+
+    .menu-button {
+        padding: 15px 30px;
+        font-size: 0.85em;
+        letter-spacing: 2px;
+    }
+
+    .button-icon {
+        font-size: 1.1em;
+    }
+
+    .button-text {
+        font-size: 0.8em;
+    }
+}
+
+@media (max-width: 400px) {
+    .menu-button {
+        padding: 12px 25px;
+        font-size: 0.75em;
+        gap: 10px;
+    }
 }

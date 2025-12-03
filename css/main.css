@@ -1,3 +1,7 @@
+* {
+    font-family: 'Press Start 2P', cursive;
+}
+
 body {
     margin: 0;
     background: black;
@@ -7,6 +11,9 @@ body {
     height: 100vh;
     overflow: hidden;
     flex-direction: column;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }
 
 canvas {
@@ -20,7 +27,6 @@ canvas {
 #hud {
     width: 100vw;
     color: white;
-    font-family: monospace;
     display: flex;
     justify-content: space-between;
     margin-bottom: 5px;
@@ -38,5 +44,4 @@ canvas {
     align-items: center;
     z-index: 1000;
     color: white;
-    font-family: Arial, sans-serif;
 }

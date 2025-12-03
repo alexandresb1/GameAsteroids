@@ -1,0 +1,210 @@
+/* Interface de Ajuda */
+.help-container {
+    background: rgba(0, 0, 0, 0.95);
+    border: 3px solid #00ffff;
+    border-radius: 15px;
+    padding: 25px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    max-width: 700px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.help-title {
+    color: #00ffff;
+    font-size: 1.6em;
+    margin: 0 0 25px 0;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+    letter-spacing: 4px;
+}
+
+.help-content {
+    text-align: left;
+    margin-bottom: 25px;
+}
+
+.help-section {
+    margin-bottom: 25px;
+    padding: 15px;
+    background: rgba(0, 50, 50, 0.3);
+    border-radius: 10px;
+    border: 1px solid rgba(0, 255, 255, 0.2);
+}
+
+.section-title {
+    color: #ffff00;
+    font-size: 0.9em;
+    margin: 0 0 15px 0;
+    letter-spacing: 2px;
+}
+
+.help-section p {
+    color: #e0e0e0;
+    font-size: 0.7em;
+    line-height: 1.8;
+    margin: 8px 0;
+}
+
+/* Lista de controles */
+.control-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.control-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+}
+
+.key {
+    background: linear-gradient(145deg, #2a2a3e, #1a1a2e);
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    padding: 8px 15px;
+    border-radius: 5px;
+    font-size: 0.75em;
+    min-width: 80px;
+    text-align: center;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 255, 255, 0.3);
+}
+
+.description {
+    color: #cccccc;
+    font-size: 0.7em;
+    flex: 1;
+}
+
+/* Lista de powerups */
+.powerup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.powerup-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 5px;
+    border-left: 3px solid #ffaa00;
+}
+
+.powerup-name {
+    color: #ffaa00;
+    font-size: 0.7em;
+    font-weight: bold;
+}
+
+.powerup-desc {
+    color: #cccccc;
+    font-size: 0.65em;
+}
+
+/* Lista de dicas */
+.tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.tips-list li {
+    color: #e0e0e0;
+    font-size: 0.7em;
+    line-height: 1.8;
+    padding: 6px 0;
+    padding-left: 20px;
+    position: relative;
+}
+
+.tips-list li::before {
+    content: '▶';
+    position: absolute;
+    left: 0;
+    color: #00ff00;
+}
+
+/* Botões */
+.help-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.help-button {
+    background: linear-gradient(45deg, #1a1a2e, #16213e);
+    border: 2px solid #00ffff;
+    color: white;
+    padding: 12px 30px;
+    font-size: 0.8em;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.help-button:hover {
+    background: linear-gradient(45deg, #ff6600, #cc4400);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 102, 0, 0.4);
+}
+
+/* Animação */
+@keyframes helpSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.help-container {
+    animation: helpSlideIn 0.4s ease-out;
+}
+
+/* Responsividade */
+@media (max-width: 600px) {
+    .help-container {
+        padding: 20px 15px;
+    }
+
+    .help-title {
+        font-size: 1.3em;
+    }
+
+    .section-title {
+        font-size: 0.85em;
+    }
+
+    .control-item {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+
+    .key {
+        min-width: 60px;
+        font-size: 0.7em;
+        padding: 6px 12px;
+    }
+
+    .description {
+        font-size: 0.65em;
+    }
+}

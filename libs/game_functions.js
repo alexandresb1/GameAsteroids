@@ -847,17 +847,32 @@ const GameFunctions = (function () {
     }
 
     function backToMenu() {
+        // CRÍTICO: Setar gameState PRIMEIRO para parar update/draw imediatamente
         gameState = 'menu';
 
-        // Forçar esconder todas as interfaces do jogo
+        // Resetar lastFrameTime para evitar delta time incorreto
+        lastFrameTime = 0;
+
+        // CRÍTICO: Forçar esconder pause IMEDIATAMENTE
         if (typeof PauseHUD !== 'undefined') {
             PauseHUD.forceHide();
+            // Garantir que está escondido com jQuery direto também
+            $('#pauseOverlay').css({
+                'display': 'none',
+                'opacity': '0',
+                'transition': 'none'
+            });
         }
+
+        // Esconder outras interfaces
         if (typeof GameOverHUD !== 'undefined') {
             GameOverHUD.hide();
         }
         if (typeof CustomizeHUD !== 'undefined') {
             CustomizeHUD.hide();
+        }
+        if (typeof HelpHUD !== 'undefined') {
+            HelpHUD.hide();
         }
 
         // Resetar jogo completamente (sem asteroides)
@@ -1189,13 +1204,13 @@ const GameFunctions = (function () {
 
         // HUD
         ctx.fillStyle = 'white';
-        ctx.font = '20px Arial';
+        ctx.font = '16px "Press Start 2P"';
         ctx.fillText(`Score: ${score}`, 20, 30);
         ctx.fillText(`Vidas: ${lives}`, 20, 60);
 
         // Mostrar informação do mapa atual
         ctx.fillStyle = '#aaaaaa';
-        ctx.font = '16px Arial';
+        ctx.font = '12px "Press Start 2P"';
         ctx.fillText(`Mapa: ${currentBackgroundIndex}/5`, 20, canvas.height - 20);
 
         // Mostrar hits restantes (resistência)
@@ -1208,7 +1223,7 @@ const GameFunctions = (function () {
 
         // Mostrar informações de dificuldade
         ctx.fillStyle = '#ffaa00';
-        ctx.font = '14px Arial';
+        ctx.font = '10px "Press Start 2P"';
         ctx.fillText(`Asteroides: ${asteroids.length}/${currentMaxAsteroids}`, 20, 120);
         ctx.fillText(`Hits/Asteroide: ${currentHitsPerAsteroid}`, 20, 140);
         ctx.fillText(`Velocidade: ${currentSpeedMultiplier.toFixed(1)}x`, 20, 160);
@@ -1238,6 +1253,15 @@ const GameFunctions = (function () {
     // INCIALIZA OS CONTROLES.
     InitControls();
 
+    // Função getter para retornar o score atual
+    function getScore() {
+        return score;
+    }
+
+    function getLives() {
+        return lives;
+    }
+
     return {
         update,
         draw,
@@ -1255,8 +1279,8 @@ const GameFunctions = (function () {
         bullets,
         asteroids,
         keys,
-        score,
-        lives,
+        getScore,  // Usar getter em vez de variável
+        getLives,  // Usar getter em vez de variável
         gameState
     };
 })();

@@ -1,10 +1,10 @@
-const CustomizeHUD = (function() {
+const CustomizeHUD = (function () {
     let isLoaded = false;
-    
+
     // Configuração das naves com atributos e descrições
     const ships = {
-        1: { 
-            name: 'PIONEER-X1', 
+        1: {
+            name: 'PIONEER-X1',
             unlockScore: 0,
             description: 'Nave de reconhecimento padrão da frota. Equilibrada e confiável, ideal para missões de exploração inicial e treinamento de pilotos novatos.',
             attributes: {
@@ -13,8 +13,8 @@ const CustomizeHUD = (function() {
                 fireRate: 3
             }
         },
-        2: { 
-            name: 'VIPER-DELTA', 
+        2: {
+            name: 'VIPER-DELTA',
             unlockScore: 200,
             description: 'Interceptador de alta velocidade com motores turbo modificados. Especializada em manobras evasivas e ataques rápidos contra alvos móveis.',
             attributes: {
@@ -23,8 +23,8 @@ const CustomizeHUD = (function() {
                 fireRate: 4
             }
         },
-        3: { 
-            name: 'TITAN-FORGE', 
+        3: {
+            name: 'TITAN-FORGE',
             unlockScore: 400,
             description: 'Cruzador pesado com blindagem reforçada e sistemas de resistência avançados. Construída para enfrentar campos de asteroides densos.',
             attributes: {
@@ -33,8 +33,8 @@ const CustomizeHUD = (function() {
                 fireRate: 2
             }
         },
-        4: { 
-            name: 'GREEN-REAPER', 
+        4: {
+            name: 'GREEN-REAPER',
             unlockScore: 800,
             description: 'Caça furtivo experimental com tecnologia alien recuperada. Combina stealth, velocidade e firepower para missões de elite.',
             attributes: {
@@ -44,10 +44,10 @@ const CustomizeHUD = (function() {
             }
         }
     };
-    
+
     function loadHTML() {
         if (isLoaded) return;
-        
+
         try {
             // HTML embutido diretamente no JavaScript para evitar problemas de CORS
             const html = `
@@ -123,40 +123,40 @@ const CustomizeHUD = (function() {
         </div>
     </div>
 </div>`;
-            
+
             // Adicionar HTML ao body usando jQuery
             $('body').append(html);
-            
+
             // Carregar CSS usando jQuery
             $('<link>', {
                 rel: 'stylesheet',
                 href: 'interfaces/css/customize.css'
             }).appendTo('head');
-            
+
             // Configurar eventos
             setupEvents();
-            
+
             isLoaded = true;
         } catch (error) {
             console.error('Erro ao carregar tela de personalização:', error);
         }
     }
-    
+
     function setupEvents() {
         // Usar delegação de eventos para garantir que funcionem
-        $(document).off('click', '#backToMenuBtn').on('click', '#backToMenuBtn', function() {
+        $(document).off('click', '#backToMenuBtn').on('click', '#backToMenuBtn', function () {
             hide();
             if (typeof StartScreenHUD !== 'undefined') {
                 StartScreenHUD.show();
             }
         });
-        
+
         // Eventos dos cards das naves usando delegação
-        $(document).off('click', '.ship-card').on('click', '.ship-card', function() {
+        $(document).off('click', '.ship-card').on('click', '.ship-card', function () {
             const shipId = $(this).data('ship');
             const unlockScore = $(this).data('unlock-score');
             const bestScore = ProgressionSystem.getBestScore();
-            
+
             // Verificar se a nave está desbloqueada
             if (bestScore >= unlockScore) {
                 selectShip(shipId);
@@ -164,87 +164,92 @@ const CustomizeHUD = (function() {
                 showUnlockMessage(shipId, unlockScore);
             }
         });
-        
-        // Tooltip hover usando delegação - agora sempre visível
-        $(document).off('mouseenter', '.ship-card').on('mouseenter', '.ship-card', function() {
-            const shipId = $(this).data('ship');
-            const unlockScore = $(this).data('unlock-score');
-            const bestScore = ProgressionSystem.getBestScore();
-            const ship = ships[shipId];
-            
-            // Função para criar barras de atributos
-            function createAttributeBar(value, maxValue = 5) {
-                const filled = '★'.repeat(value);
-                const empty = '☆'.repeat(maxValue - value);
-                return filled + empty;
-            }
 
-            let tooltipContent = '';
-            if (bestScore >= unlockScore) {
-                tooltipContent = `<div class="tooltip-ship-name">${ship.name}</div>
-                                <div class="tooltip-description">${ship.description}</div>
-                                <div class="tooltip-attributes">
-                                    <div>🚀 Manobrabilidade: ${createAttributeBar(ship.attributes.maneuverability)}</div>
-                                    <div>🛡️ Resistência: ${createAttributeBar(ship.attributes.resistance, 3)} (${ship.attributes.resistance} hits)</div>
-                                    <div>🔥 Cadência: ${createAttributeBar(ship.attributes.fireRate)}</div>
-                                </div>
-                                <div class="tooltip-status available">✓ Disponível - Clique para selecionar</div>`;
-            } else {
-                tooltipContent = `<div class="tooltip-ship-name">${ship.name}</div>
-                                <div class="tooltip-description">${ship.description}</div>
-                                <div class="tooltip-attributes">
-                                    <div>🚀 Manobrabilidade: ${createAttributeBar(ship.attributes.maneuverability)}</div>
-                                    <div>🛡️ Resistência: ${createAttributeBar(ship.attributes.resistance, 3)} (${ship.attributes.resistance} hits)</div>
-                                    <div>🔥 Cadência: ${createAttributeBar(ship.attributes.fireRate)}</div>
-                                </div>
-                                <div class="tooltip-status locked">🔒 Requer ${unlockScore} pontos (Seu melhor: ${bestScore})</div>`;
-            }
-            
-            updateTooltip(tooltipContent);
+        // Tooltip hover usando delegação - mostra info ao passar o mouse
+        $(document).off('mouseenter', '.ship-card').on('mouseenter', '.ship-card', function () {
+            const shipId = $(this).data('ship');
+            showShipTooltip(shipId);
         });
-        
-        $(document).off('mouseleave', '.ships-grid').on('mouseleave', '.ships-grid', function() {
-            resetTooltip();
+
+        // Ao sair do grid, volta a mostrar a nave selecionada
+        $(document).off('mouseleave', '.ships-grid').on('mouseleave', '.ships-grid', function () {
+            showSelectedShipTooltip();
         });
     }
-    
+
+    function showShipTooltip(shipId) {
+        const unlockScore = ships[shipId].unlockScore;
+        const bestScore = ProgressionSystem.getBestScore();
+        const ship = ships[shipId];
+
+        // Função para criar barras de atributos
+        function createAttributeBar(value, maxValue = 5) {
+            const filled = '★'.repeat(value);
+            const empty = '☆'.repeat(maxValue - value);
+            return filled + empty;
+        }
+
+        let tooltipContent = '';
+        if (bestScore >= unlockScore) {
+            tooltipContent = `<div class="tooltip-ship-name">${ship.name}</div>
+                            <div class="tooltip-description">${ship.description}</div>
+                            <div class="tooltip-attributes">
+                                <div>🚀 Manobrabilidade: ${createAttributeBar(ship.attributes.maneuverability)}</div>
+                                <div>🛡️ Resistência: ${createAttributeBar(ship.attributes.resistance, 3)} (${ship.attributes.resistance} hits)</div>
+                                <div>🔥 Cadência: ${createAttributeBar(ship.attributes.fireRate)}</div>
+                            </div>
+                            <div class="tooltip-status available">✓ Disponível - Clique para selecionar</div>`;
+        } else {
+            tooltipContent = `<div class="tooltip-ship-name">${ship.name}</div>
+                            <div class="tooltip-description">${ship.description}</div>
+                            <div class="tooltip-attributes">
+                                <div>🚀 Manobrabilidade: ${createAttributeBar(ship.attributes.maneuverability)}</div>
+                                <div>🛡️ Resistência: ${createAttributeBar(ship.attributes.resistance, 3)} (${ship.attributes.resistance} hits)</div>
+                                <div>🔥 Cadência: ${createAttributeBar(ship.attributes.fireRate)}</div>
+                            </div>
+                            <div class="tooltip-status locked">🔒 Requer ${unlockScore} pontos (Seu melhor: ${bestScore})</div>`;
+        }
+
+        updateTooltip(tooltipContent);
+    }
+
+    function showSelectedShipTooltip() {
+        const selectedShip = ProgressionSystem.getSelectedShip();
+        showShipTooltip(selectedShip);
+    }
+
     function selectShip(shipId) {
         // Remover seleção anterior
         $('.ship-card').removeClass('selected');
-        
+
         // Adicionar seleção atual
         $(`.ship-card[data-ship="${shipId}"]`).addClass('selected');
-        
+
         // Salvar seleção
         ProgressionSystem.setSelectedShip(shipId);
-        
+
         // Atualizar UI
         updateSelectedShipDisplay();
-        
+
         // Feedback visual
         showNotification(`${ships[shipId].name} selecionada!`);
     }
-    
+
     function showUnlockMessage(shipId, requiredScore) {
         const currentScore = ProgressionSystem.getBestScore();
         const remaining = requiredScore - currentScore;
         showNotification(`Você precisa de mais ${remaining} pontos para desbloquear ${ships[shipId].name}!`);
     }
-    
+
     function updateTooltip(htmlContent) {
         const $tooltip = $('#shipTooltip');
         $tooltip.find('.tooltip-content').html(htmlContent);
         // Tooltip sempre visível, apenas muda o conteúdo
     }
-    
+
     function resetTooltip() {
-        const $tooltip = $('#shipTooltip');
-        $tooltip.find('.tooltip-content').html(`
-            <div class="tooltip-default">
-                <div class="tooltip-ship-name">Selecione uma Nave</div>
-                <div class="tooltip-description">Passe o mouse sobre uma nave para ver suas características e requisitos de desbloqueio.</div>
-            </div>
-        `);
+        // Ao invés de mostrar mensagem genérica, mostra a nave selecionada
+        showSelectedShipTooltip();
     }
 
     function initializeTooltip() {
@@ -254,10 +259,10 @@ const CustomizeHUD = (function() {
             display: 'block',
             opacity: 1
         });
-        // Definir conteúdo inicial
-        resetTooltip();
+        // Mostrar nave selecionada por padrão
+        showSelectedShipTooltip();
     }
-    
+
     function showNotification(message) {
         // Criar notificação temporária
         const $notification = $('<div>', {
@@ -278,14 +283,14 @@ const CustomizeHUD = (function() {
                 transition: 'opacity 0.3s ease'
             }
         });
-        
+
         $('body').append($notification);
-        
+
         // Animação de entrada
         setTimeout(() => {
             $notification.css('opacity', '1');
         }, 10);
-        
+
         // Remover após 2 segundos
         setTimeout(() => {
             $notification.css('opacity', '0');
@@ -294,21 +299,21 @@ const CustomizeHUD = (function() {
             }, 300);
         }, 2000);
     }
-    
+
     function updateUI() {
         const bestScore = ProgressionSystem.getBestScore();
         const selectedShip = ProgressionSystem.getSelectedShip();
-        
+
         // Atualizar melhor score
         $('#bestScore').text(bestScore);
-        
+
         // Atualizar status das naves
-        $('.ship-card').each(function() {
+        $('.ship-card').each(function () {
             const $card = $(this);
             const shipId = $card.data('ship');
             const unlockScore = $card.data('unlock-score');
             const $status = $card.find('.ship-status');
-            
+
             if (bestScore >= unlockScore) {
                 $card.removeClass('locked').addClass('unlocked');
                 $status.removeClass('locked').addClass('unlocked').text('DESBLOQUEADA');
@@ -316,7 +321,7 @@ const CustomizeHUD = (function() {
                 $card.removeClass('unlocked').addClass('locked');
                 $status.removeClass('unlocked').addClass('locked').text(`Score: ${unlockScore}`);
             }
-            
+
             // Marcar nave selecionada
             if (shipId == selectedShip) {
                 $card.addClass('selected');
@@ -324,32 +329,32 @@ const CustomizeHUD = (function() {
                 $card.removeClass('selected');
             }
         });
-        
+
         // Atualizar nome da nave selecionada
         updateSelectedShipDisplay();
     }
-    
+
     function updateSelectedShipDisplay() {
         const selectedShip = ProgressionSystem.getSelectedShip();
         $('#selectedShipName').text(ships[selectedShip].name);
     }
-    
+
     function show() {
         loadHTML();
-        
+
         // Atualizar UI com dados atuais
         updateUI();
-        
+
         // Inicializar tooltip
         initializeTooltip();
-        
+
         const $overlay = $('#customizeOverlay');
         if ($overlay.length) {
             $overlay.css({
                 display: 'flex',
                 opacity: 0
             });
-            
+
             // Animação de entrada usando jQuery
             setTimeout(() => {
                 $overlay.css({
@@ -359,7 +364,7 @@ const CustomizeHUD = (function() {
             }, 10);
         }
     }
-    
+
     function hide() {
         const $overlay = $('#customizeOverlay');
         if ($overlay.length) {
@@ -367,13 +372,13 @@ const CustomizeHUD = (function() {
                 transition: 'opacity 0.2s ease',
                 opacity: 0
             });
-            
+
             setTimeout(() => {
                 $overlay.css('display', 'none');
             }, 200);
         }
     }
-    
+
     return {
         show,
         hide,

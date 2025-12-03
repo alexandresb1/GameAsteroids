@@ -1,9 +1,9 @@
-const PauseHUD = (function() {
+const PauseHUD = (function () {
     let isLoaded = false;
-    
+
     function loadHTML() {
         if (isLoaded) return;
-        
+
         try {
             // HTML embutido diretamente no JavaScript para evitar problemas de CORS
             const html = `
@@ -26,45 +26,49 @@ const PauseHUD = (function() {
         </div>
     </div>
 </div>`;
-            
+
             // Adicionar HTML ao body usando jQuery
             $('body').append(html);
-            
+
             // Carregar CSS usando jQuery
             $('<link>', {
                 rel: 'stylesheet',
                 href: 'interfaces/css/pause.css'
             }).appendTo('head');
-            
+
             // Configurar eventos dos botões usando jQuery
-            $('#resumeGameBtn').on('click', function() {
+            $('#resumeGameBtn').on('click', function () {
                 hide();
                 GameFunctions.resume();
             });
-            
-            $('#backToMenuBtn').on('click', function() {
-                // Usar forceHide para esconder imediatamente sem animação
+
+            $('#backToMenuBtn').on('click', function () {
+                // Esconder LOCALMENTE primeiro para garantir feedback visual imediato
                 forceHide();
-                // Chamar backToMenu sem delay, já que forceHide é imediato
+
+                // Depois chamar a função do jogo que vai limpar tudo
                 GameFunctions.backToMenu();
             });
-            
+
             isLoaded = true;
         } catch (error) {
             console.error('Erro ao carregar tela de pause:', error);
         }
     }
-    
+
     function show() {
         loadHTML();
-        
+
         const $overlay = $('#pauseOverlay');
         if ($overlay.length) {
+            // CRÍTICO: Remover style inline que foi forçado pelo forceHide
+            $overlay.removeAttr('style');
+
             $overlay.css({
                 display: 'flex',
                 opacity: 0
             });
-            
+
             // Animação de entrada usando jQuery
             setTimeout(() => {
                 $overlay.css({
@@ -74,7 +78,7 @@ const PauseHUD = (function() {
             }, 10);
         }
     }
-    
+
     function hide() {
         const $overlay = $('#pauseOverlay');
         if ($overlay.length) {
@@ -82,7 +86,7 @@ const PauseHUD = (function() {
                 transition: 'opacity 0.2s ease',
                 opacity: 0
             });
-            
+
             setTimeout(() => {
                 $overlay.css('display', 'none');
             }, 200);
@@ -92,18 +96,19 @@ const PauseHUD = (function() {
     function forceHide() {
         const $overlay = $('#pauseOverlay');
         if ($overlay.length) {
-            $overlay.css({
-                display: 'none',
-                opacity: 0
-            });
+            // Abordagem NUCLEAR: Forçar style inline com !important
+            $overlay.attr('style', 'display: none !important; opacity: 0 !important; pointer-events: none !important;');
+
+            // Garantir que não há listeners de eventos ativos
+            $overlay.off('transitionend');
         }
     }
-    
+
     function isVisible() {
         const $overlay = $('#pauseOverlay');
         return $overlay.length && $overlay.css('display') !== 'none';
     }
-    
+
     return {
         show,
         hide,

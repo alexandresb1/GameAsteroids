@@ -4,6 +4,7 @@
 #pauseOverlay.interface-overlay {
     background: rgba(0, 0, 0, 0.8) !important;
 }
+
 .pause-container {
     background: rgba(0, 0, 0, 0.95);
     border: 3px solid #00ffff;
@@ -18,11 +19,10 @@
 
 .pause-title {
     color: #00ffff;
-    font-family: 'Courier New', monospace;
-    font-size: 2.5em;
+    font-size: 1.8em;
     margin: 0 0 30px 0;
     text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
-    letter-spacing: 2px;
+    letter-spacing: 4px;
 }
 
 .pause-buttons {
@@ -37,13 +37,12 @@
     border: 2px solid #00ffff;
     color: white;
     padding: 15px 25px;
-    font-size: 1.2em;
-    font-family: 'Courier New', monospace;
+    font-size: 0.8em;
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 
 .pause-button:hover {
@@ -67,9 +66,9 @@
 
 .pause-instructions {
     color: #cccccc;
-    font-family: 'Courier New', monospace;
-    font-size: 0.9em;
+    font-size: 0.7em;
     margin-top: 20px;
+    line-height: 1.8;
 }
 
 .pause-instructions kbd {
@@ -88,6 +87,7 @@
         opacity: 0;
         transform: translateY(-50px) scale(0.8);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -104,11 +104,11 @@
         padding: 20px;
         margin: 20px;
     }
-    
+
     .pause-title {
         font-size: 2em;
     }
-    
+
     .pause-button {
         padding: 12px 20px;
         font-size: 1em;

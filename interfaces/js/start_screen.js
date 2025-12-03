@@ -1,9 +1,9 @@
-const StartScreenHUD = (function() {
+const StartScreenHUD = (function () {
     let isLoaded = false;
-    
+
     function loadHTML() {
         if (isLoaded) return;
-        
+
         try {
             // HTML embutido diretamente no JavaScript para evitar problemas de CORS
             const html = `
@@ -13,56 +13,62 @@ const StartScreenHUD = (function() {
              alt="Asteroids Logo" 
              class="game-logo">
 
-        <div class="instructions">
-            <p>Use as setas para mover a nave</p>
-            <p>Pressione ESPAÇO para atirar</p>
-            <p>Desvie dos asteroides!</p>
-        </div>
-
         <!-- Botões do menu -->
         <div class="menu-buttons">
-            <img id="startGameBtn"
-                 src="assets/images/btn-jogar.png"
-                 alt="Iniciar Jogo"
-                 class="menu-button-image">
+            <button id="startGameBtn" class="menu-button">
+                <span class="button-icon">▶</span>
+                <span class="button-text">JOGAR</span>
+            </button>
             
-            <img id="customizeBtn"
-                 src="assets/images/btn-personalizar.png"
-                 alt="Personalizar"
-                 class="menu-button-image">
+            <button id="customizeBtn" class="menu-button">
+                <span class="button-icon">⚙</span>
+                <span class="button-text">PERSONALIZAR</span>
+            </button>
+            
+            <button id="helpBtn" class="menu-button">
+                <span class="button-icon">?</span>
+                <span class="button-text">COMO JOGAR</span>
+            </button>
         </div>
     </div>
 </div>`;
-            
+
             // Adicionar HTML ao body usando jQuery
             $('body').append(html);
-            
+
             // Carregar CSS usando jQuery
             $('<link>', {
                 rel: 'stylesheet',
                 href: 'interfaces/css/start_screen.css'
             }).appendTo('head');
-            
+
             // Configurar eventos dos botões usando jQuery
-            $('#startGameBtn').on('click', function() {
+            $('#startGameBtn').on('click', function () {
                 hide();
                 AudioManager.playGameMusic();  // <---- música de gameplay
                 GameFunctions.start();
             });
 
-            $('#customizeBtn').on('click', function() {
+            $('#customizeBtn').on('click', function () {
                 hide();
                 if (typeof CustomizeHUD !== 'undefined') {
                     CustomizeHUD.show();
                 }
             });
-            
+
+            $('#helpBtn').on('click', function () {
+                hide();
+                if (typeof HelpHUD !== 'undefined') {
+                    HelpHUD.show();
+                }
+            });
+
             isLoaded = true;
         } catch (error) {
             console.error('Erro ao carregar tela inicial:', error);
         }
     }
-    
+
     function show() {
         loadHTML();
 
@@ -78,7 +84,6 @@ const StartScreenHUD = (function() {
     }
 
 
-    
     function hide() {
         const $overlay = $('#startScreenOverlay');
         if ($overlay.length) {
@@ -86,13 +91,13 @@ const StartScreenHUD = (function() {
                 transition: 'opacity 0.4s',
                 opacity: 0
             });
-            
+
             setTimeout(() => {
                 $overlay.css('display', 'none');
             }, 400);
         }
     }
-    
+
     return {
         show,
         hide
