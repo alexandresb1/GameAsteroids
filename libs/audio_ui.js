@@ -1,4 +1,4 @@
-const AudioUI = (function() {
+const AudioUI = (function () {
     let $audioButton = null;
     let $pauseButton = null;
     let isInitialized = false;
@@ -29,64 +29,38 @@ const AudioUI = (function() {
         // Criar botão de áudio usando jQuery
         $audioButton = $('<div>', {
             id: 'audioToggleBtn',
+            class: 'hud-button', // Usando nova classe CSS
             css: {
-                position: 'fixed',
                 top: '20px',
-                right: '20px',
-                width: '50px',
-                height: '50px',
-                background: 'rgba(0, 0, 0, 0.7)',
-                border: '2px solid white',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-                transition: 'all 0.3s ease',
-                userSelect: 'none'
+                right: '20px'
             }
         });
 
-        // Efeitos hover usando jQuery
-        $audioButton.hover(
-            function() {
-                $(this).css({
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    transform: 'scale(1.1)'
-                });
-            },
-            function() {
-                $(this).css({
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    transform: 'scale(1)'
-                });
-            }
-        );
+        // Efeitos hover agora são controlados via CSS (.hud-button:hover)
 
         // Evento de clique usando jQuery
-        $audioButton.on('click', function() {
+        $audioButton.on('click', function () {
             const wasMuted = AudioManager.getMutedState();
             const isMuted = AudioManager.toggleMute();
             updateIcon();
-            
+
             // Mostrar notificação se o áudio foi ativado pela primeira vez
             if (wasMuted && !isMuted) {
                 showAudioNotification('🔊 Áudio ativado!');
             } else if (!wasMuted && isMuted) {
                 showAudioNotification('🔇 Áudio desativado');
             }
-            
-            // Feedback visual usando jQuery
+
+            // Feedback visual usando jQuery (apenas escala rápida)
             $(this).css('transform', 'scale(0.9)');
             setTimeout(() => {
-                $(this).css('transform', 'scale(1)');
+                $(this).css('transform', ''); // Remove inline style para voltar ao CSS
             }, 150);
         });
 
         // Adicionar ao body usando jQuery
         $('body').append($audioButton);
-        
+
         // Atualizar ícone inicial
         updateIcon();
     }
@@ -97,55 +71,30 @@ const AudioUI = (function() {
         // Criar botão de pause usando jQuery
         $pauseButton = $('<div>', {
             id: 'pauseToggleBtn',
+            class: 'hud-button', // Usando nova classe CSS
             css: {
-                position: 'fixed',
                 top: '20px',
                 left: '50%',
                 transform: 'translateX(-50%)',
-                width: '50px',
-                height: '50px',
-                background: 'rgba(0, 0, 0, 0.7)',
-                border: '2px solid white',
-                borderRadius: '50%',
-                cursor: 'pointer',
-                display: 'none', // Inicialmente oculto
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-                transition: 'all 0.3s ease',
-                userSelect: 'none'
+                display: 'none' // Inicialmente oculto
             }
         });
 
         // Adicionar ícone de pause
         $pauseButton.html(pauseIcon);
 
-        // Efeitos hover usando jQuery
-        $pauseButton.hover(
-            function() {
-                $(this).css({
-                    background: 'rgba(255, 255, 255, 0.2)',
-                    transform: 'translateX(-50%) scale(1.1)'
-                });
-            },
-            function() {
-                $(this).css({
-                    background: 'rgba(0, 0, 0, 0.7)',
-                    transform: 'translateX(-50%) scale(1)'
-                });
-            }
-        );
+        // Efeitos hover agora são controlados via CSS (.hud-button:hover)
 
         // Evento de clique usando jQuery
-        $pauseButton.on('click', function() {
+        $pauseButton.on('click', function () {
             if (typeof GameFunctions !== 'undefined') {
                 GameFunctions.togglePause();
             }
-            
+
             // Feedback visual usando jQuery
             $(this).css('transform', 'translateX(-50%) scale(0.9)');
             setTimeout(() => {
-                $(this).css('transform', 'translateX(-50%) scale(1)');
+                $(this).css('transform', 'translateX(-50%)'); // Remove inline scale
             }, 150);
         });
 
@@ -161,7 +110,7 @@ const AudioUI = (function() {
 
         const isMuted = AudioManager.getMutedState();
         $audioButton.html(isMuted ? soundOffIcon : soundOnIcon);
-        
+
         // Adicionar tooltip usando jQuery
         $audioButton.attr('title', isMuted ? 'Clique para ativar o som' : 'Clique para desativar o som');
     }
@@ -205,7 +154,7 @@ const AudioUI = (function() {
 
     function init() {
         if (isInitialized) return;
-        
+
         createAudioButton();
         createPauseButton();
         isInitialized = true;

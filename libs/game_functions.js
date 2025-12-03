@@ -832,6 +832,8 @@ const GameFunctions = (function () {
             gameState = 'playing';
             // Resetar lastFrameTime para evitar salto no delta time
             lastFrameTime = 0;
+        } else {
+            console.warn('Tentativa de resumir jogo quando não estava pausado. Estado atual:', gameState);
         }
     }
 
@@ -856,12 +858,6 @@ const GameFunctions = (function () {
         // CRÍTICO: Forçar esconder pause IMEDIATAMENTE
         if (typeof PauseHUD !== 'undefined') {
             PauseHUD.forceHide();
-            // Garantir que está escondido com jQuery direto também
-            $('#pauseOverlay').css({
-                'display': 'none',
-                'opacity': '0',
-                'transition': 'none'
-            });
         }
 
         // Esconder outras interfaces
@@ -1202,49 +1198,81 @@ const GameFunctions = (function () {
             ctx.globalAlpha = 1; // Resetar alpha
         });
 
-        // HUD
+        // --- HUD RESPONSIVO ---
+
+        // Função auxiliar para tamanho de fonte responsivo
+        const getResponsiveFontSize = (baseSize) => {
+            const scaleFactor = Math.min(canvas.width / 1200, 1); // Baseado em 1200px de largura
+            return Math.max(Math.floor(baseSize * scaleFactor), 10); // Mínimo 10px
+        };
+
+        const fontSizeLg = getResponsiveFontSize(20);
+        const fontSizeMd = getResponsiveFontSize(14);
+        const fontSizeSm = getResponsiveFontSize(10);
+        const padding = 20;
+
+        // 1. TOP ESQUERDO: Score, Vidas, Integridade
+        ctx.textAlign = 'left';
+
+        // Score
         ctx.fillStyle = 'white';
-        ctx.font = '16px "Press Start 2P"';
-        ctx.fillText(`Score: ${score}`, 20, 30);
-        ctx.fillText(`Vidas: ${lives}`, 20, 60);
+        ctx.font = `${fontSizeLg}px "Press Start 2P"`;
+        ctx.fillText(`SCORE: ${score}`, padding, padding + fontSizeLg);
 
-        // Mostrar informação do mapa atual
-        ctx.fillStyle = '#aaaaaa';
-        ctx.font = '12px "Press Start 2P"';
-        ctx.fillText(`Mapa: ${currentBackgroundIndex}/5`, 20, canvas.height - 20);
+        // Vidas
+        ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+        ctx.fillText(`VIDAS: ${lives}`, padding, padding + fontSizeLg * 2.5);
 
-        // Mostrar hits restantes (resistência)
+        // Integridade
         if (hitsRemaining < currentShipAttributes.resistance) {
-            ctx.fillStyle = hitsRemaining === 1 ? '#ff4444' : '#ffaa44'; // Vermelho se 1 hit, laranja se 2
+            ctx.fillStyle = hitsRemaining === 1 ? '#ff4444' : '#ffaa44';
         } else {
-            ctx.fillStyle = '#44ff44'; // Verde se full
+            ctx.fillStyle = '#44ff44';
         }
-        ctx.fillText(`Integridade: ${hitsRemaining}/${currentShipAttributes.resistance}`, 20, 90);
+        ctx.fillText(`INTEGRIDADE: ${hitsRemaining}/${currentShipAttributes.resistance}`, padding, padding + fontSizeLg * 2.5 + fontSizeMd * 1.5);
 
-        // Mostrar informações de dificuldade
-        ctx.fillStyle = '#ffaa00';
-        ctx.font = '10px "Press Start 2P"';
-        ctx.fillText(`Asteroides: ${asteroids.length}/${currentMaxAsteroids}`, 20, 120);
-        ctx.fillText(`Hits/Asteroide: ${currentHitsPerAsteroid}`, 20, 140);
-        ctx.fillText(`Velocidade: ${currentSpeedMultiplier.toFixed(1)}x`, 20, 160);
 
-        // Mostrar munição especial ativa
+        // 2. INFERIOR ESQUERDO: Powerups e Especial
+        let bottomY = canvas.height - padding;
+
+        // Especial
+        if (specialCooldown > 0) {
+            ctx.fillStyle = '#888888';
+            ctx.fillText(`ESPECIAL [X]: ${Math.ceil(specialCooldown)}s`, padding, bottomY);
+        } else {
+            ctx.fillStyle = '#ffaa00';
+            ctx.fillText(`ESPECIAL [X]: PRONTO!`, padding, bottomY);
+        }
+
+        // Powerup Ativo (acima do especial)
         if (currentAmmoType !== 'normal' && ammoTimer > 0) {
             const ammoInfo = POWERUP_TYPES[currentAmmoType.toUpperCase() + '_SHOT'];
             if (ammoInfo) {
                 ctx.fillStyle = ammoInfo.color;
-                ctx.fillText(`${ammoInfo.name}: ${Math.ceil(ammoTimer)}s`, 20, 190);
+                ctx.fillText(`${ammoInfo.name}: ${Math.ceil(ammoTimer)}s`, padding, bottomY - fontSizeMd * 1.8);
             }
         }
 
-        // Mostrar status do especial
-        if (specialCooldown > 0) {
-            ctx.fillStyle = '#888888'; // Cinza quando em cooldown
-            ctx.fillText(`Especial [X]: ${Math.ceil(specialCooldown)}s`, 20, 220);
-        } else {
-            ctx.fillStyle = '#ffaa00'; // Laranja quando disponível
-            ctx.fillText(`Especial [X]: PRONTO!`, 20, 220);
-        }
+
+        // 3. INFERIOR CENTRAL: Mapa
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#aaaaaa';
+        ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+        ctx.fillText(`MAPA: ${currentBackgroundIndex}/5`, canvas.width / 2, canvas.height - padding);
+
+
+        // 4. INFERIOR DIREITO: Dificuldade
+        ctx.textAlign = 'right';
+        ctx.fillStyle = 'white'; // Texto branco conforme solicitado
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+
+        const lineHeight = fontSizeSm * 1.8;
+        ctx.fillText(`ASTEROIDES: ${asteroids.length}/${currentMaxAsteroids}`, canvas.width - padding, canvas.height - padding - lineHeight * 2);
+        ctx.fillText(`HITS/AST: ${currentHitsPerAsteroid}`, canvas.width - padding, canvas.height - padding - lineHeight);
+        ctx.fillText(`VELOCIDADE: ${currentSpeedMultiplier.toFixed(1)}x`, canvas.width - padding, canvas.height - padding);
+
+        // Resetar alinhamento
+        ctx.textAlign = 'left';
 
     }
     // FIM: FUNÇÃO PARA DESENHAR ELEMENTOS DO JOGO.

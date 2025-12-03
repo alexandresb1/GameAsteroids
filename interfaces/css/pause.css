@@ -50,24 +50,6 @@
     color: #000;
     transform: translateY(-2px);
     box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
-}
-
-.pause-button:active {
-    transform: translateY(0);
-}
-
-.resume-button:hover {
-    background: linear-gradient(45deg, #00ff00, #00cc00);
-}
-
-.menu-button:hover {
-    background: linear-gradient(45deg, #ff6600, #cc4400);
-}
-
-.pause-instructions {
-    color: #cccccc;
-    font-size: 0.7em;
-    margin-top: 20px;
     line-height: 1.8;
 }
 

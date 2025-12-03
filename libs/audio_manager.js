@@ -1,12 +1,17 @@
-const AudioManager = (function() {
+const AudioManager = (function () {
     // Criar os objetos de áudio
-    const menuMusic = new Audio('audio/Main Menu 1.mp3');
+    const menuTracks = [
+        new Audio('audio/Main Menu 1.mp3'),
+        new Audio('audio/Main Menu 2.mp3')
+    ];
     const gameMusic = new Audio('audio/Gameplay1.mp3');
 
     // Configurações comuns
-    menuMusic.loop = true;
+    menuTracks.forEach(track => {
+        track.loop = true;
+        track.volume = 0.7;
+    });
     gameMusic.loop = true;
-    menuMusic.volume = 0.7;
     gameMusic.volume = 0.7;
 
     let currentTrack = null;
@@ -18,12 +23,12 @@ const AudioManager = (function() {
     function enableAudioOnFirstInteraction() {
         if (!userHasInteracted) {
             userHasInteracted = true;
-            
+
             // Se havia uma música pendente, tocar agora
             if (pendingTrack && !isMuted) {
                 playTrack(pendingTrack);
             }
-            
+
             // Remover listeners após primeira interação usando jQuery
             $(document).off('click keydown touchstart', enableAudioOnFirstInteraction);
         }
@@ -40,7 +45,7 @@ const AudioManager = (function() {
 
         stopCurrentTrack();
         currentTrack = track;
-        
+
         return currentTrack.play().catch(error => {
             console.log('Não foi possível tocar áudio:', error.message);
             // Marcar como pendente para tentar novamente
@@ -49,7 +54,11 @@ const AudioManager = (function() {
     }
 
     function playMenuMusic() {
-        return playTrack(menuMusic);
+        // Selecionar aleatoriamente entre as faixas de menu
+        const randomIndex = Math.floor(Math.random() * menuTracks.length);
+        const selectedTrack = menuTracks[randomIndex];
+        console.log(`Tocando música do menu: ${randomIndex + 1}`);
+        return playTrack(selectedTrack);
     }
 
     function playGameMusic() {
@@ -66,23 +75,25 @@ const AudioManager = (function() {
 
     function toggleMute() {
         isMuted = !isMuted;
-        
+
         if (isMuted) {
             stopCurrentTrack();
         } else if (userHasInteracted && pendingTrack) {
             playTrack(pendingTrack);
         }
-        
+
         // Notificar mudança para atualizar UI
         if (typeof AudioUI !== 'undefined') {
             AudioUI.updateIcon();
         }
-        
+
         return isMuted;
     }
 
     function setVolume(volume) {
-        menuMusic.volume = volume;
+        menuTracks.forEach(track => {
+            track.volume = volume;
+        });
         gameMusic.volume = volume;
     }
 

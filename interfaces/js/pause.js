@@ -97,7 +97,10 @@ const PauseHUD = (function () {
         const $overlay = $('#pauseOverlay');
         if ($overlay.length) {
             // Abordagem NUCLEAR: Forçar style inline com !important
-            $overlay.attr('style', 'display: none !important; opacity: 0 !important; pointer-events: none !important;');
+            // Usando setProperty para garantir !important
+            $overlay[0].style.setProperty('display', 'none', 'important');
+            $overlay[0].style.setProperty('opacity', '0', 'important');
+            $overlay[0].style.setProperty('pointer-events', 'none', 'important');
 
             // Garantir que não há listeners de eventos ativos
             $overlay.off('transitionend');
@@ -109,10 +112,13 @@ const PauseHUD = (function () {
         return $overlay.length && $overlay.css('display') !== 'none';
     }
 
-    return {
+    // Expor explicitamente para window para garantir acesso global
+    window.PauseHUD = {
         show,
         hide,
         forceHide,
         isVisible
     };
+
+    return window.PauseHUD;
 })();
