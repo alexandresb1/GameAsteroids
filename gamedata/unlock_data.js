@@ -53,7 +53,7 @@ const GameData = (function () {
                 fireRate: 5
             },
             unlockType: 'playTime',
-            unlockRequirement: 300 // 5 minutos em segundos
+            unlockRequirement: 60
         }
     };
 

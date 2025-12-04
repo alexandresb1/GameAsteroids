@@ -160,6 +160,92 @@ const PauseHUD = (function () {
         return $overlay.length && $overlay.css('display') !== 'none';
     }
 
+    function showEndGameConfirm() {
+        // Obter dados atuais do jogo
+        const currentScore = typeof GameFunctions !== 'undefined' ? GameFunctions.getScore() : 0;
+        const playTime = typeof ProgressionSystem !== 'undefined' ? ProgressionSystem.getPlayTime() : 0;
+        
+        console.log('=== FINALIZAR JOGO ===');
+        console.log('Score atual:', currentScore);
+        console.log('Tempo de jogo (segundos):', playTime);
+        
+        // Formatar tempo de jogo
+        const totalSeconds = Math.floor(playTime);
+        const hours = Math.floor(totalSeconds / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+        
+        let timeString = '';
+        if (hours > 0) {
+            timeString = `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        } else if (minutes > 0) {
+            timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        } else {
+            // Menos de 1 minuto - mostrar apenas segundos
+            timeString = `0:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        console.log('Tempo formatado:', timeString);
+        
+        // Atualizar valores no popup
+        $('#currentScoreValue').text(currentScore);
+        $('#currentTimeValue').text(timeString);
+        
+        // Mostrar popup com animação
+        const $popup = $('#endGameConfirm');
+        $popup.css({
+            display: 'flex',
+            opacity: 0
+        });
+        
+        setTimeout(() => {
+            $popup.css({
+                transition: 'opacity 0.3s ease',
+                opacity: 1
+            });
+        }, 10);
+    }
+
+    function hideEndGameConfirm() {
+        const $popup = $('#endGameConfirm');
+        $popup.css({
+            transition: 'opacity 0.2s ease',
+            opacity: 0
+        });
+        
+        setTimeout(() => {
+            $popup.css('display', 'none');
+        }, 200);
+    }
+
+    function endGameAndSave() {
+        // Esconder popup
+        hideEndGameConfirm();
+        
+        // Obter score atual
+        const currentScore = typeof GameFunctions !== 'undefined' ? GameFunctions.getScore() : 0;
+        
+        // Salvar progresso
+        if (typeof ProgressionSystem !== 'undefined') {
+            // Salvar tempo da sessão atual
+            ProgressionSystem.saveCurrentSession();
+            
+            // Atualizar score (verifica se é novo recorde)
+            ProgressionSystem.updateScore(currentScore);
+            
+            // Adicionar ao score total
+            ProgressionSystem.addToTotalScore(currentScore);
+        }
+        
+        // Esconder menu de pause
+        forceHide();
+        
+        // Voltar ao menu principal
+        if (typeof GameFunctions !== 'undefined') {
+            GameFunctions.backToMenu();
+        }
+    }
+
     // Expor explicitamente para window para garantir acesso global
     window.PauseHUD = {
         show,

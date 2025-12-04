@@ -777,10 +777,16 @@ const GameFunctions = (function () {
 
         // Registrar pontuação no sistema de progressão
         if (typeof ProgressionSystem !== 'undefined') {
+            // Salvar tempo da sessão atual
+            ProgressionSystem.saveCurrentSession();
+            
             const isNewRecord = ProgressionSystem.updateScore(score);
             if (isNewRecord) {
                 console.log('Novo recorde!', score);
             }
+            
+            // Adicionar ao score total
+            ProgressionSystem.addToTotalScore(score);
         }
 
         // Esconder botão de pause

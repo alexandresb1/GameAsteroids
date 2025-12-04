@@ -9,6 +9,8 @@ const ProgressionSystem = (function () {
         UNLOCKED_SHIPS: 'asteroids_unlocked_ships'
     };
 
+    // Acumulador de tempo da sessão atual (em segundos)
+    let currentSessionTime = 0;
 
     // Configurações de desbloqueio (agora vem do GameData)
     const UNLOCK_REQUIREMENTS = {};
@@ -98,17 +100,36 @@ const ProgressionSystem = (function () {
 
     // Gerenciar tempo de jogo (em segundos)
     function getPlayTime() {
-        return parseInt(localStorage.getItem(STORAGE_KEYS.PLAY_TIME)) || 0;
+        const stored = localStorage.getItem(STORAGE_KEYS.PLAY_TIME);
+        const savedTime = parseInt(stored) || 0;
+        // Retornar tempo salvo + tempo da sessão atual
+        return savedTime + Math.floor(currentSessionTime);
     }
 
     function setPlayTime(seconds) {
-        localStorage.setItem(STORAGE_KEYS.PLAY_TIME, seconds.toString());
+        // Salvar apenas segundos inteiros
+        localStorage.setItem(STORAGE_KEYS.PLAY_TIME, Math.floor(seconds).toString());
         updateUnlockedShips();
     }
 
-    function addPlayTime(seconds) {
-        const current = getPlayTime();
-        setPlayTime(current + seconds);
+    function addPlayTime(deltaSeconds) {
+        // Acumular tempo na sessão atual (não salva no localStorage ainda)
+        currentSessionTime += deltaSeconds;
+    }
+
+    function saveCurrentSession() {
+        // Salvar o tempo acumulado da sessão no localStorage
+        if (currentSessionTime > 0) {
+            const totalTime = getPlayTime();
+            setPlayTime(totalTime);
+            console.log('✅ Sessão salva! Tempo total:', Math.floor(totalTime), 'segundos');
+            currentSessionTime = 0; // Resetar acumulador
+        }
+    }
+
+    function resetSessionTime() {
+        // Resetar o acumulador da sessão (usado quando volta ao menu sem salvar)
+        currentSessionTime = 0;
     }
 
     // Gerenciar nave selecionada
@@ -364,6 +385,8 @@ const ProgressionSystem = (function () {
         getPlayTime,
         setPlayTime,
         addPlayTime,
+        saveCurrentSession,
+        resetSessionTime,
 
         // Naves
         getSelectedShip,
