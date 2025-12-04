@@ -55,8 +55,17 @@ const CustomizeHUD = (function () {
     <div class="customize-container">
         <h1 class="customize-title">PERSONALIZAÇÃO</h1>
         
-        <!-- Seção de Naves -->
-        <div class="ships-section">
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="naves">NAVES</button>
+            <button class="tab-button" data-tab="especiais">ESPECIAIS</button>
+        </div>
+
+        <!-- Tab Content Container -->
+        <div class="tab-content-container">
+            <!-- Tab: Naves -->
+            <div class="tab-content active" id="tab-naves">
+                <div class="ships-section">
             <h2 class="section-title">NAVES</h2>
             
             <div class="ships-grid">
@@ -94,6 +103,21 @@ const CustomizeHUD = (function () {
                     </div>
                     <div class="ship-name">GREEN-REAPER</div>
                     <div class="ship-status locked">Score: 800</div>
+                </div>
+            </div>
+        </div>
+            </div>
+
+            <!-- Tab: Especiais -->
+            <div class="tab-content" id="tab-especiais">
+                <div class="specials-section">
+                    <h2 class="section-title">ESPECIAIS</h2>
+                    <div class="specials-placeholder">
+                        <p style="color: #888; font-size: 0.9em; padding: 40px;">
+                            🚀 Sistema de especiais em breve!<br>
+                            Aqui você poderá equipar habilidades especiais desbloqueáveis.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,6 +199,22 @@ const CustomizeHUD = (function () {
         $(document).off('mouseleave', '.ships-grid').on('mouseleave', '.ships-grid', function () {
             showSelectedShipTooltip();
         });
+
+        // Tab switching
+        $(document).off('click', '.tab-button').on('click', '.tab-button', function () {
+            const tabName = $(this).data('tab');
+            switchTab(tabName);
+        });
+    }
+
+    function switchTab(tabName) {
+        // Update tab buttons
+        $('.tab-button').removeClass('active');
+        $(`.tab-button[data-tab="${tabName}"]`).addClass('active');
+
+        // Update tab content
+        $('.tab-content').removeClass('active');
+        $(`#tab-${tabName}`).addClass('active');
     }
 
     function showShipTooltip(shipId) {
