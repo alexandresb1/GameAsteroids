@@ -217,7 +217,7 @@ const GameFunctions = (function () {
     const BULLET_SPEED = 300.0;             // pixels por segundo
     const ASTEROID_MIN_SPEED = 60.0;        // pixels por segundo
     const ASTEROID_MAX_SPEED = 280.0;       // pixels por segundo
-    const BASE_FIRE_RATE_COOLDOWN = 0.25;   // segundos entre tiros (base)
+    const BASE_FIRE_RATE_COOLDOWN = 0.35;   // segundos entre tiros (base - mais lento)
     // FIM: CONSTANTES DE VELOCIDADE
 
     // Funções para calcular atributos dinâmicos
@@ -230,8 +230,15 @@ const GameFunctions = (function () {
     }
 
     function getFireRateCooldown() {
-        // Quanto maior fireRate, menor o cooldown
-        return BASE_FIRE_RATE_COOLDOWN * (6 - currentShipAttributes.fireRate) / 3.0;
+        // Mapear fireRate (1-6) para cooldown em segundos
+        // fireRate 1 = 0.50s (lento)
+        // fireRate 3 = 0.35s (médio)
+        // fireRate 6 = 0.20s (rápido)
+        const fireRate = currentShipAttributes.fireRate;
+        
+        // Fórmula: cooldown diminui linearmente com fireRate
+        // 0.50 - (fireRate - 1) * 0.06
+        return 0.50 - ((fireRate - 1) * 0.06);
     }
 
 
@@ -242,25 +249,33 @@ const GameFunctions = (function () {
     function InitControls() {
         $(document).keydown(e => {
             keys[e.key] = true;
-            if (e.key === KEY_SHOOT && gameState === 'playing') {
-                const currentTime = performance.now() / 1000.0; // Converter para segundos
-                const cooldown = getFireRateCooldown();
-
-                // Verificar se pode atirar baseado na cadência
-                if (currentTime - lastShotTime >= cooldown) {
-                    Shoot();
-                    lastShotTime = currentTime;
-                }
-            }
+            
+            // Especial só dispara no keydown (não contínuo)
             if (e.key === KEY_SPECIAL && gameState === 'playing') {
-                // Usar especial se disponível
                 if (specialCooldown <= 0) {
                     useSpecial();
                 }
             }
+            
+            // Pause só dispara no keydown
             if (e.key === KEY_PAUSE) togglePause();
         });
+        
         $(document).keyup(e => keys[e.key] = false);
+    }
+
+    function updateShooting(currentTime) {
+        // Verificar se a barra de espaço está pressionada
+        if (keys[KEY_SHOOT]) {
+            const currentTimeSeconds = currentTime / 1000.0; // Converter para segundos
+            const cooldown = getFireRateCooldown();
+            
+            // Verificar se pode atirar baseado na cadência
+            if (currentTimeSeconds - lastShotTime >= cooldown) {
+                Shoot();
+                lastShotTime = currentTimeSeconds;
+            }
+        }
     }
 
     function Shoot() {
@@ -1009,6 +1024,9 @@ const GameFunctions = (function () {
         updatePowerups(clampedDeltaTime);
         updateAmmoTimer(clampedDeltaTime);
         updateSpecialCooldown(clampedDeltaTime);
+        
+        // Verificar disparo contínuo (se barra de espaço está pressionada)
+        updateShooting(currentTime);
 
         // Adicionar tempo de jogo ao ProgressionSystem
         if (typeof ProgressionSystem !== 'undefined') {
