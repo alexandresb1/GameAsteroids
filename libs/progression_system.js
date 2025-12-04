@@ -1,12 +1,12 @@
-const ProgressionSystem = (function() {
-    
+const ProgressionSystem = (function () {
+
     // Chaves para localStorage
     const STORAGE_KEYS = {
         BEST_SCORE: 'asteroids_best_score',
         SELECTED_SHIP: 'asteroids_selected_ship',
         UNLOCKED_SHIPS: 'asteroids_unlocked_ships'
     };
-    
+
     // Configurações de desbloqueio
     const UNLOCK_REQUIREMENTS = {
         1: 0,    // Nave Básica - sempre desbloqueada
@@ -14,54 +14,54 @@ const ProgressionSystem = (function() {
         3: 400,  // Nave Resistente  
         4: 800   // Nave Elite
     };
-    
+
     // Inicializar dados padrão
     function initializeData() {
         // Se não há melhor score, definir como 0
         if (localStorage.getItem(STORAGE_KEYS.BEST_SCORE) === null) {
             setBestScore(0);
         }
-        
+
         // Se não há nave selecionada, definir como 1 (básica)
         if (localStorage.getItem(STORAGE_KEYS.SELECTED_SHIP) === null) {
             setSelectedShip(1);
         }
-        
+
         // Atualizar naves desbloqueadas baseado no score atual
         updateUnlockedShips();
     }
-    
+
     // Gerenciar melhor pontuação
     function getBestScore() {
         return parseInt(localStorage.getItem(STORAGE_KEYS.BEST_SCORE)) || 0;
     }
-    
+
     function setBestScore(score) {
         localStorage.setItem(STORAGE_KEYS.BEST_SCORE, score.toString());
         updateUnlockedShips();
     }
-    
+
     function updateScore(newScore) {
         const currentBest = getBestScore();
         if (newScore > currentBest) {
             setBestScore(newScore);
-            
+
             // Verificar se desbloqueou novas naves
             const newlyUnlocked = checkNewUnlocks(currentBest, newScore);
             if (newlyUnlocked.length > 0) {
                 showUnlockNotifications(newlyUnlocked);
             }
-            
+
             return true; // Novo recorde
         }
         return false; // Não foi recorde
     }
-    
+
     // Gerenciar nave selecionada
     function getSelectedShip() {
         return parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_SHIP)) || 1;
     }
-    
+
     function setSelectedShip(shipId) {
         // Verificar se a nave está desbloqueada
         if (isShipUnlocked(shipId)) {
@@ -70,39 +70,39 @@ const ProgressionSystem = (function() {
         }
         return false;
     }
-    
+
     // Gerenciar naves desbloqueadas
     function getUnlockedShips() {
         const stored = localStorage.getItem(STORAGE_KEYS.UNLOCKED_SHIPS);
         return stored ? JSON.parse(stored) : [1]; // Nave 1 sempre desbloqueada
     }
-    
+
     function setUnlockedShips(ships) {
         localStorage.setItem(STORAGE_KEYS.UNLOCKED_SHIPS, JSON.stringify(ships));
     }
-    
+
     function updateUnlockedShips() {
         const bestScore = getBestScore();
         const unlocked = [];
-        
+
         for (const [shipId, requiredScore] of Object.entries(UNLOCK_REQUIREMENTS)) {
             if (bestScore >= requiredScore) {
                 unlocked.push(parseInt(shipId));
             }
         }
-        
+
         setUnlockedShips(unlocked);
     }
-    
+
     function isShipUnlocked(shipId) {
         const bestScore = getBestScore();
         return bestScore >= UNLOCK_REQUIREMENTS[shipId];
     }
-    
+
     // Verificar novos desbloqueios
     function checkNewUnlocks(oldScore, newScore) {
         const newlyUnlocked = [];
-        
+
         for (const [shipId, requiredScore] of Object.entries(UNLOCK_REQUIREMENTS)) {
             if (oldScore < requiredScore && newScore >= requiredScore) {
                 newlyUnlocked.push({
@@ -111,20 +111,20 @@ const ProgressionSystem = (function() {
                 });
             }
         }
-        
+
         return newlyUnlocked;
     }
-    
+
     function getShipName(shipId) {
         const names = {
             1: 'Nave Básica',
-            2: 'Nave Rápida', 
+            2: 'Nave Rápida',
             3: 'Nave Resistente',
             4: 'Nave Elite'
         };
         return names[shipId] || `Nave ${shipId}`;
     }
-    
+
     function showUnlockNotifications(unlockedShips) {
         unlockedShips.forEach((ship, index) => {
             setTimeout(() => {
@@ -132,7 +132,7 @@ const ProgressionSystem = (function() {
             }, index * 1000); // Mostrar uma por vez com delay
         });
     }
-    
+
     function showUnlockNotification(ship) {
         // Criar notificação de desbloqueio
         const $notification = $('<div>', {
@@ -154,7 +154,7 @@ const ProgressionSystem = (function() {
                 boxShadow: '0 0 30px rgba(0, 255, 0, 0.5)'
             }
         });
-        
+
         $notification.html(`
             <div style="font-size: 1.5em; color: #00ff00; margin-bottom: 10px;">
                 🚀 NAVE DESBLOQUEADA! 🚀
@@ -166,9 +166,9 @@ const ProgressionSystem = (function() {
                 Disponível na personalização
             </div>
         `);
-        
+
         $('body').append($notification);
-        
+
         // Animação de entrada
         setTimeout(() => {
             $notification.css({
@@ -176,7 +176,7 @@ const ProgressionSystem = (function() {
                 transform: 'translate(-50%, -50%) scale(1.05)'
             });
         }, 100);
-        
+
         // Remover após 3 segundos
         setTimeout(() => {
             $notification.css({
@@ -188,7 +188,7 @@ const ProgressionSystem = (function() {
             }, 500);
         }, 3000);
     }
-    
+
     // Resetar progresso (para debug/teste)
     function resetProgress() {
         localStorage.removeItem(STORAGE_KEYS.BEST_SCORE);
@@ -196,13 +196,13 @@ const ProgressionSystem = (function() {
         localStorage.removeItem(STORAGE_KEYS.UNLOCKED_SHIPS);
         initializeData();
     }
-    
+
     // Obter sprite da nave selecionada
     function getSelectedShipSprite() {
         const selectedShip = getSelectedShip();
         return `assets/sprites/Ship-${selectedShip}.png`;
     }
-    
+
     // Obter informações completas do progresso
     function getProgressInfo() {
         return {
@@ -213,11 +213,48 @@ const ProgressionSystem = (function() {
             nextUnlock: getNextUnlock()
         };
     }
-    
+
+    // Exportar dados para JSON
+    function exportData() {
+        const data = {
+            version: 1,
+            timestamp: Date.now(),
+            bestScore: getBestScore(),
+            selectedShip: getSelectedShip(),
+            unlockedShips: getUnlockedShips()
+        };
+        return JSON.stringify(data, null, 2);
+    }
+
+    // Importar dados de JSON
+    function importData(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+
+            // Validação básica
+            if (!data || typeof data !== 'object') {
+                throw new Error('Formato inválido');
+            }
+
+            // Restaurar dados
+            if (typeof data.bestScore === 'number') setBestScore(data.bestScore);
+            if (typeof data.selectedShip === 'number') setSelectedShip(data.selectedShip);
+            if (Array.isArray(data.unlockedShips)) setUnlockedShips(data.unlockedShips);
+
+            // Recarregar dados internos
+            initializeData();
+
+            return { success: true, message: 'Dados importados com sucesso!' };
+        } catch (error) {
+            console.error('Erro ao importar save:', error);
+            return { success: false, message: 'Erro ao importar: Arquivo inválido.' };
+        }
+    }
+
     function getNextUnlock() {
         const bestScore = getBestScore();
         const unlocked = getUnlockedShips();
-        
+
         for (const [shipId, requiredScore] of Object.entries(UNLOCK_REQUIREMENTS)) {
             if (!unlocked.includes(parseInt(shipId)) && bestScore < requiredScore) {
                 return {
@@ -228,33 +265,35 @@ const ProgressionSystem = (function() {
                 };
             }
         }
-        
+
         return null; // Todas as naves desbloqueadas
     }
-    
+
     // Inicializar quando o sistema carrega
     initializeData();
-    
+
     return {
         // Pontuação
         getBestScore,
         setBestScore,
         updateScore,
-        
+
         // Naves
         getSelectedShip,
         setSelectedShip,
         getSelectedShipSprite,
         isShipUnlocked,
         getUnlockedShips,
-        
+
         // Informações
         getProgressInfo,
         getNextUnlock,
-        
+
         // Utilitários
         resetProgress,
-        
+        exportData,
+        importData,
+
         // Constantes
         UNLOCK_REQUIREMENTS
     };

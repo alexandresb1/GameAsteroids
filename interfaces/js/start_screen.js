@@ -29,6 +29,11 @@ const StartScreenHUD = (function () {
                 <span class="button-icon">?</span>
                 <span class="button-text">COMO JOGAR</span>
             </button>
+
+            <button id="settingsBtn" class="menu-button">
+                <span class="button-icon">⚙</span>
+                <span class="button-text">CONFIGURAÇÕES</span>
+            </button>
         </div>
     </div>
 </div>`;
@@ -60,6 +65,13 @@ const StartScreenHUD = (function () {
                 hide();
                 if (typeof HelpHUD !== 'undefined') {
                     HelpHUD.show();
+                }
+            });
+
+            $('#settingsBtn').on('click', function () {
+                hide();
+                if (typeof SettingsHUD !== 'undefined') {
+                    SettingsHUD.show();
                 }
             });
 
