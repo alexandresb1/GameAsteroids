@@ -16,6 +16,10 @@ const PauseHUD = (function () {
                 ▶️ Continuar
             </button>
             
+            <button id="endGameBtn" class="pause-button end-button">
+                🏁 Finalizar Jogo
+            </button>
+            
             <button id="backToMenuBtn" class="pause-button menu-button">
                 🏠 Menu Principal
             </button>
@@ -23,6 +27,37 @@ const PauseHUD = (function () {
         
         <div class="pause-instructions">
             <p>Pressione <kbd>ESC</kbd> para continuar</p>
+        </div>
+    </div>
+    
+    <!-- Popup de confirmação de finalização -->
+    <div id="endGameConfirm" class="end-game-popup" style="display: none;">
+        <div class="end-game-content">
+            <h2 class="end-game-title">FINALIZAR JOGO?</h2>
+            
+            <div class="end-game-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Score Atual:</span>
+                    <span id="currentScoreValue" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tempo de Jogo:</span>
+                    <span id="currentTimeValue" class="stat-value">0:00</span>
+                </div>
+            </div>
+            
+            <p class="end-game-warning">
+                Seu progresso será salvo e você voltará ao menu principal.
+            </p>
+            
+            <div class="end-game-buttons">
+                <button id="cancelEndBtn" class="end-game-button cancel-button">
+                    Cancelar
+                </button>
+                <button id="confirmEndBtn" class="end-game-button confirm-button">
+                    Finalizar
+                </button>
+            </div>
         </div>
     </div>
 </div>`;
@@ -42,12 +77,25 @@ const PauseHUD = (function () {
                 GameFunctions.resume();
             });
 
+            $('#endGameBtn').on('click', function () {
+                showEndGameConfirm();
+            });
+
             $('#backToMenuBtn').on('click', function () {
                 // Esconder LOCALMENTE primeiro para garantir feedback visual imediato
                 forceHide();
 
                 // Depois chamar a função do jogo que vai limpar tudo
                 GameFunctions.backToMenu();
+            });
+
+            // Eventos do popup de confirmação
+            $('#cancelEndBtn').on('click', function () {
+                hideEndGameConfirm();
+            });
+
+            $('#confirmEndBtn').on('click', function () {
+                endGameAndSave();
             });
 
             isLoaded = true;

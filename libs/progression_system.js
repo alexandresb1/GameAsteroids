@@ -3,23 +3,47 @@ const ProgressionSystem = (function () {
     // Chaves para localStorage
     const STORAGE_KEYS = {
         BEST_SCORE: 'asteroids_best_score',
+        TOTAL_SCORE: 'asteroids_total_score',
+        PLAY_TIME: 'asteroids_play_time',
         SELECTED_SHIP: 'asteroids_selected_ship',
         UNLOCKED_SHIPS: 'asteroids_unlocked_ships'
     };
 
-    // Configurações de desbloqueio
-    const UNLOCK_REQUIREMENTS = {
-        1: 0,    // Nave Básica - sempre desbloqueada
-        2: 200,  // Nave Rápida
-        3: 400,  // Nave Resistente  
-        4: 800   // Nave Elite
-    };
+
+    // Configurações de desbloqueio (agora vem do GameData)
+    const UNLOCK_REQUIREMENTS = {};
+
+    // Inicializar requirements do GameData quando disponível
+    function initUnlockRequirements() {
+        if (typeof GameData !== 'undefined') {
+            const ships = GameData.getAllShips();
+            ships.forEach(ship => {
+                UNLOCK_REQUIREMENTS[ship.id] = {
+                    type: ship.unlockType,
+                    value: ship.unlockRequirement
+                };
+            });
+        }
+    }
 
     // Inicializar dados padrão
     function initializeData() {
+        // Inicializar requirements do GameData
+        initUnlockRequirements();
+
         // Se não há melhor score, definir como 0
         if (localStorage.getItem(STORAGE_KEYS.BEST_SCORE) === null) {
             setBestScore(0);
+        }
+
+        // Se não há score total, definir como 0
+        if (localStorage.getItem(STORAGE_KEYS.TOTAL_SCORE) === null) {
+            setTotalScore(0);
+        }
+
+        // Se não há tempo de jogo, definir como 0
+        if (localStorage.getItem(STORAGE_KEYS.PLAY_TIME) === null) {
+            setPlayTime(0);
         }
 
         // Se não há nave selecionada, definir como 1 (básica)
@@ -27,7 +51,7 @@ const ProgressionSystem = (function () {
             setSelectedShip(1);
         }
 
-        // Atualizar naves desbloqueadas baseado no score atual
+        // Atualizar naves desbloqueadas baseado nas stats atuais
         updateUnlockedShips();
     }
 
@@ -57,6 +81,36 @@ const ProgressionSystem = (function () {
         return false; // Não foi recorde
     }
 
+    // Gerenciar score total
+    function getTotalScore() {
+        return parseInt(localStorage.getItem(STORAGE_KEYS.TOTAL_SCORE)) || 0;
+    }
+
+    function setTotalScore(score) {
+        localStorage.setItem(STORAGE_KEYS.TOTAL_SCORE, score.toString());
+        updateUnlockedShips();
+    }
+
+    function addToTotalScore(points) {
+        const current = getTotalScore();
+        setTotalScore(current + points);
+    }
+
+    // Gerenciar tempo de jogo (em segundos)
+    function getPlayTime() {
+        return parseInt(localStorage.getItem(STORAGE_KEYS.PLAY_TIME)) || 0;
+    }
+
+    function setPlayTime(seconds) {
+        localStorage.setItem(STORAGE_KEYS.PLAY_TIME, seconds.toString());
+        updateUnlockedShips();
+    }
+
+    function addPlayTime(seconds) {
+        const current = getPlayTime();
+        setPlayTime(current + seconds);
+    }
+
     // Gerenciar nave selecionada
     function getSelectedShip() {
         return parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_SHIP)) || 1;
@@ -82,11 +136,13 @@ const ProgressionSystem = (function () {
     }
 
     function updateUnlockedShips() {
-        const bestScore = getBestScore();
         const unlocked = [];
+        const bestScore = getBestScore();
+        const totalScore = getTotalScore();
+        const playTime = getPlayTime();
 
-        for (const [shipId, requiredScore] of Object.entries(UNLOCK_REQUIREMENTS)) {
-            if (bestScore >= requiredScore) {
+        for (const [shipId, requirement] of Object.entries(UNLOCK_REQUIREMENTS)) {
+            if (checkUnlockRequirement(requirement, bestScore, totalScore, playTime)) {
                 unlocked.push(parseInt(shipId));
             }
         }
@@ -94,9 +150,30 @@ const ProgressionSystem = (function () {
         setUnlockedShips(unlocked);
     }
 
+    function checkUnlockRequirement(requirement, bestScore, totalScore, playTime) {
+        switch (requirement.type) {
+            case 'always':
+                return true;
+            case 'highScore':
+                return bestScore >= requirement.value;
+            case 'totalScore':
+                return totalScore >= requirement.value;
+            case 'playTime':
+                return playTime >= requirement.value;
+            default:
+                return false;
+        }
+    }
+
     function isShipUnlocked(shipId) {
+        const requirement = UNLOCK_REQUIREMENTS[shipId];
+        if (!requirement) return false;
+
         const bestScore = getBestScore();
-        return bestScore >= UNLOCK_REQUIREMENTS[shipId];
+        const totalScore = getTotalScore();
+        const playTime = getPlayTime();
+
+        return checkUnlockRequirement(requirement, bestScore, totalScore, playTime);
     }
 
     // Verificar novos desbloqueios
@@ -217,9 +294,11 @@ const ProgressionSystem = (function () {
     // Exportar dados para JSON
     function exportData() {
         const data = {
-            version: 1,
+            version: 2,
             timestamp: Date.now(),
             bestScore: getBestScore(),
+            totalScore: getTotalScore(),
+            playTime: getPlayTime(),
             selectedShip: getSelectedShip(),
             unlockedShips: getUnlockedShips()
         };
@@ -238,6 +317,8 @@ const ProgressionSystem = (function () {
 
             // Restaurar dados
             if (typeof data.bestScore === 'number') setBestScore(data.bestScore);
+            if (typeof data.totalScore === 'number') setTotalScore(data.totalScore);
+            if (typeof data.playTime === 'number') setPlayTime(data.playTime);
             if (typeof data.selectedShip === 'number') setSelectedShip(data.selectedShip);
             if (Array.isArray(data.unlockedShips)) setUnlockedShips(data.unlockedShips);
 
@@ -277,6 +358,12 @@ const ProgressionSystem = (function () {
         getBestScore,
         setBestScore,
         updateScore,
+        getTotalScore,
+        setTotalScore,
+        addToTotalScore,
+        getPlayTime,
+        setPlayTime,
+        addPlayTime,
 
         // Naves
         getSelectedShip,

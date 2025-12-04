@@ -1004,6 +1004,11 @@ const GameFunctions = (function () {
         updateAmmoTimer(clampedDeltaTime);
         updateSpecialCooldown(clampedDeltaTime);
 
+        // Adicionar tempo de jogo ao ProgressionSystem
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.addPlayTime(clampedDeltaTime);
+        }
+
         // Garantir que sempre tenhamos o número máximo de asteroides (APENAS quando estiver jogando)
         if (gameState === 'playing') {
             while (asteroids.length < currentMaxAsteroids) {
