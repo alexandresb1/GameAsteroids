@@ -248,7 +248,8 @@ const GameFunctions = (function () {
     }
 
     function getShipAcceleration() {
-        return BASE_SHIP_ACCELERATION * (currentShipAttributes.maneuverability / 3.0);
+        const scale = getGameScale();
+        return BASE_SHIP_ACCELERATION * (currentShipAttributes.maneuverability / 3.0) * scale;
     }
 
     function getFireRateCooldown() {
@@ -385,9 +386,10 @@ const GameFunctions = (function () {
     }
 
     function Shoot() {
-        const baseVelX = Math.sin(ship.angle) * BULLET_SPEED;
-        const baseVelY = -Math.cos(ship.angle) * BULLET_SPEED;
         const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale;
+        const baseVelX = Math.sin(ship.angle) * scaledBulletSpeed;
+        const baseVelY = -Math.cos(ship.angle) * scaledBulletSpeed;
         const bulletRadius = 4 * scale;
         const piercingRadius = 5 * scale;
 
@@ -398,8 +400,8 @@ const GameFunctions = (function () {
                 bullets.push({
                     x: ship.x,
                     y: ship.y,
-                    velocityX: Math.sin(ship.angle - offset) * BULLET_SPEED,
-                    velocityY: -Math.cos(ship.angle - offset) * BULLET_SPEED,
+                    velocityX: Math.sin(ship.angle - offset) * scaledBulletSpeed,
+                    velocityY: -Math.cos(ship.angle - offset) * scaledBulletSpeed,
                     radius: bulletRadius,
                     type: 'double',
                     color: '#ff4444',
@@ -409,8 +411,8 @@ const GameFunctions = (function () {
                 bullets.push({
                     x: ship.x,
                     y: ship.y,
-                    velocityX: Math.sin(ship.angle + offset) * BULLET_SPEED,
-                    velocityY: -Math.cos(ship.angle + offset) * BULLET_SPEED,
+                    velocityX: Math.sin(ship.angle + offset) * scaledBulletSpeed,
+                    velocityY: -Math.cos(ship.angle + offset) * scaledBulletSpeed,
                     radius: bulletRadius,
                     type: 'double',
                     color: '#ff4444',
@@ -436,8 +438,8 @@ const GameFunctions = (function () {
                 bullets.push({
                     x: ship.x,
                     y: ship.y,
-                    velocityX: Math.sin(ship.angle - spread) * BULLET_SPEED,
-                    velocityY: -Math.cos(ship.angle - spread) * BULLET_SPEED,
+                    velocityX: Math.sin(ship.angle - spread) * scaledBulletSpeed,
+                    velocityY: -Math.cos(ship.angle - spread) * scaledBulletSpeed,
                     radius: bulletRadius,
                     type: 'triple',
                     color: '#44ff44',
@@ -447,8 +449,8 @@ const GameFunctions = (function () {
                 bullets.push({
                     x: ship.x,
                     y: ship.y,
-                    velocityX: Math.sin(ship.angle + spread) * BULLET_SPEED,
-                    velocityY: -Math.cos(ship.angle + spread) * BULLET_SPEED,
+                    velocityX: Math.sin(ship.angle + spread) * scaledBulletSpeed,
+                    velocityY: -Math.cos(ship.angle + spread) * scaledBulletSpeed,
                     radius: bulletRadius,
                     type: 'triple',
                     color: '#44ff44',
@@ -499,6 +501,7 @@ const GameFunctions = (function () {
         // Criar shockwave - onda de tiros em todas as direções
         const angleStep = (Math.PI * 2) / SHOCKWAVE_BULLETS; // Dividir 360° pelos tiros
         const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale;
         const bulletRadius = 4 * scale;
 
         for (let i = 0; i < SHOCKWAVE_BULLETS; i++) {
@@ -507,8 +510,8 @@ const GameFunctions = (function () {
             bullets.push({
                 x: ship.x,
                 y: ship.y,
-                velocityX: Math.sin(angle) * BULLET_SPEED,
-                velocityY: -Math.cos(angle) * BULLET_SPEED,
+                velocityX: Math.sin(angle) * scaledBulletSpeed,
+                velocityY: -Math.cos(angle) * scaledBulletSpeed,
                 radius: bulletRadius,
                 type: 'shockwave',
                 color: '#ffaa00', // Laranja para destacar
@@ -537,9 +540,12 @@ const GameFunctions = (function () {
         const spawnRegion = Math.floor(Math.random() * 8);
         let x, y;
 
-        // Aplicar multiplicador de velocidade dinâmico
+        // Aplicar multiplicador de velocidade dinâmico e escala de viewport
+        const viewportScale = getGameScale(); // Escala baseada no viewport
         const baseSpeed = ASTEROID_MIN_SPEED + Math.random() * (ASTEROID_MAX_SPEED - ASTEROID_MIN_SPEED);
-        const speed = baseSpeed * currentSpeedMultiplier;
+        // Ajustar velocidade proporcionalmente ao tamanho da tela
+        // Em telas menores (mobile), velocidade é reduzida proporcionalmente
+        const speed = baseSpeed * currentSpeedMultiplier * viewportScale;
 
         // Definir posição de spawn baseada na região
         switch (spawnRegion) {
@@ -604,9 +610,9 @@ const GameFunctions = (function () {
         const spriteIndex = Math.floor(Math.random() * asteroidSprites.length);
 
         // Calcular tamanho responsivo do asteroide
-        const scale = getGameScale();
+        const sizeScale = getGameScale();
         const baseRadius = 30 + Math.random() * 20;
-        const scaledRadius = baseRadius * scale;
+        const scaledRadius = baseRadius * sizeScale;
         
         const asteroid = {
             x: x,

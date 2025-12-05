@@ -1,5 +1,11 @@
 const Game = (function() {
     let $canvas, ctx;
+    
+    // Controle de FPS fixo
+    const TARGET_FPS = 60;
+    const FRAME_DURATION = 1000 / TARGET_FPS; // ~16.67ms por frame
+    let lastFrameTime = 0;
+    let accumulatedTime = 0;
 
     function resizeCanvas() {
         $canvas[0].width = $(window).width();
@@ -14,6 +20,7 @@ const Game = (function() {
         $(window).resize(resizeCanvas);
 
         // Inicia o loop de renderização
+        lastFrameTime = performance.now();
         requestAnimationFrame(gameLoop);
     }
 
@@ -32,8 +39,22 @@ const Game = (function() {
     }
 
     function gameLoop(currentTime) {
-        update(currentTime);
+        // Calcular delta time desde o último frame
+        const deltaTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
+        
+        // Acumular tempo
+        accumulatedTime += deltaTime;
+        
+        // Processar frames fixos de 60 FPS
+        while (accumulatedTime >= FRAME_DURATION) {
+            update(currentTime);
+            accumulatedTime -= FRAME_DURATION;
+        }
+        
+        // Sempre desenhar (interpolação visual)
         draw();
+        
         requestAnimationFrame(gameLoop);
     }
 
