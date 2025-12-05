@@ -5,6 +5,12 @@ const GameFunctions = (function () {
     const bullets = [];
     const asteroids = [];
     const powerups = [];
+    
+    // Controle com mouse
+    let mouseX = 0;
+    let mouseY = 0;
+    let mouseControlEnabled = false; // Ativa quando o mouse se move
+    let mouseButtonPressed = false; // Clique esquerdo pressionado
     const keys = {};
     let score = 0;
     let lives = 3;
@@ -250,6 +256,11 @@ const GameFunctions = (function () {
         $(document).keydown(e => {
             keys[e.key] = true;
             
+            // Desabilitar controle de mouse quando usar setinhas
+            if (e.key === KEY_LEFT || e.key === KEY_RIGHT) {
+                mouseControlEnabled = false;
+            }
+            
             // Especial só dispara no keydown (não contínuo)
             if (e.key === KEY_SPECIAL && gameState === 'playing') {
                 if (specialCooldown <= 0) {
@@ -262,14 +273,55 @@ const GameFunctions = (function () {
         });
         
         $(document).keyup(e => keys[e.key] = false);
+        
+        // Controle com mouse
+        $(document).mousemove(e => {
+            if (gameState === 'playing') {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+                
+                // Ativar controle de mouse quando mover o cursor
+                // (desativa controle de setinhas)
+                if (!keys[KEY_LEFT] && !keys[KEY_RIGHT]) {
+                    mouseControlEnabled = true;
+                }
+            }
+        });
+        
+        // Clique do mouse para acelerar
+        $(document).mousedown(e => {
+            if (gameState === 'playing' && e.button === 0) { // Botão esquerdo
+                mouseButtonPressed = true;
+                e.preventDefault();
+            }
+        });
+        
+        $(document).mouseup(e => {
+            if (e.button === 0) {
+                mouseButtonPressed = false;
+            }
+        });
+        
+        // Prevenir menu de contexto ao clicar com botão direito durante o jogo
+        $(document).contextmenu(e => {
+            if (gameState === 'playing') {
+                e.preventDefault();
+            }
+        });
     }
 
     function updateShooting(currentTime) {
-        // Verificar se a barra de espaço está pressionada
-        if (keys[KEY_SHOOT]) {
-            const currentTimeSeconds = currentTime / 1000.0; // Converter para segundos
-            const cooldown = getFireRateCooldown();
-            
+        const currentTimeSeconds = currentTime / 1000.0;
+        const cooldown = getFireRateCooldown();
+        
+        // Verificar se está em mobile
+        const isMobile = typeof MobileControls !== 'undefined' && MobileControls.isMobileDevice();
+        
+        // Em mobile: tiro automático sempre ativo
+        // Em desktop: apenas se barra de espaço estiver pressionada
+        const shouldShoot = isMobile || keys[KEY_SHOOT];
+        
+        if (shouldShoot) {
             // Verificar se pode atirar baseado na cadência
             if (currentTimeSeconds - lastShotTime >= cooldown) {
                 Shoot();
@@ -623,11 +675,62 @@ const GameFunctions = (function () {
         const rotationSpeed = getShipRotationSpeed();
         const acceleration = getShipAcceleration();
 
-        if (keys[KEY_LEFT]) ship.angle -= rotationSpeed * deltaTime;
-        if (keys[KEY_RIGHT]) ship.angle += rotationSpeed * deltaTime;
-        if (keys[KEY_UP]) {
-            ship.velocityX += Math.sin(ship.angle) * acceleration * deltaTime;
-            ship.velocityY -= Math.cos(ship.angle) * acceleration * deltaTime;
+        // Verificar se está usando controles mobile
+        const isMobile = typeof MobileControls !== 'undefined' && MobileControls.isMobileDevice();
+        
+        if (isMobile) {
+            // Controles mobile via joystick
+            const joystick = MobileControls.getJoystickState();
+            
+            if (joystick.active && joystick.distance > 0) {
+                // Rotacionar nave para o ângulo do joystick
+                ship.angle = joystick.angle;
+                
+                // Acelerar baseado na distância do joystick
+                const thrust = joystick.distance;
+                ship.velocityX += Math.sin(ship.angle) * acceleration * deltaTime * thrust;
+                ship.velocityY -= Math.cos(ship.angle) * acceleration * deltaTime * thrust;
+            }
+        } else {
+            // Controles desktop
+            
+            // Controle de mouse (aponta para o cursor)
+            if (mouseControlEnabled) {
+                const dx = mouseX - ship.x;
+                const dy = mouseY - ship.y;
+                const targetAngle = Math.atan2(dx, -dy);
+                
+                // Suavizar rotação para o ângulo alvo
+                let angleDiff = targetAngle - ship.angle;
+                
+                // Normalizar diferença de ângulo para -PI a PI
+                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                
+                // Rotacionar suavemente
+                const maxRotation = rotationSpeed * deltaTime * 2; // Mais rápido que setinhas
+                if (Math.abs(angleDiff) < maxRotation) {
+                    ship.angle = targetAngle;
+                } else {
+                    ship.angle += Math.sign(angleDiff) * maxRotation;
+                }
+                
+                // Acelerar com clique do mouse
+                if (mouseButtonPressed) {
+                    ship.velocityX += Math.sin(ship.angle) * acceleration * deltaTime;
+                    ship.velocityY -= Math.cos(ship.angle) * acceleration * deltaTime;
+                }
+            } else {
+                // Controle com setinhas (clássico)
+                if (keys[KEY_LEFT]) ship.angle -= rotationSpeed * deltaTime;
+                if (keys[KEY_RIGHT]) ship.angle += rotationSpeed * deltaTime;
+                
+                // Acelerar com seta para cima
+                if (keys[KEY_UP]) {
+                    ship.velocityX += Math.sin(ship.angle) * acceleration * deltaTime;
+                    ship.velocityY -= Math.cos(ship.angle) * acceleration * deltaTime;
+                }
+            }
         }
 
         // Aplicar atrito (convertido para delta time)
@@ -825,6 +928,10 @@ const GameFunctions = (function () {
         if (typeof AudioUI !== 'undefined') {
             AudioUI.showPauseButton();
         }
+        // Mostrar controles mobile se aplicável
+        if (typeof MobileControls !== 'undefined') {
+            MobileControls.show();
+        }
     }
 
     function restart() {
@@ -898,6 +1005,11 @@ const GameFunctions = (function () {
         // Esconder botão de pause
         if (typeof AudioUI !== 'undefined') {
             AudioUI.hidePauseButton();
+        }
+        
+        // Esconder controles mobile
+        if (typeof MobileControls !== 'undefined') {
+            MobileControls.hide();
         }
 
         // Mostrar tela inicial
@@ -1319,6 +1431,13 @@ const GameFunctions = (function () {
         return lives;
     }
 
+    // Função para disparar especial (chamada pelo botão mobile)
+    function triggerSpecial() {
+        if (gameState === 'playing' && specialCooldown <= 0) {
+            useSpecial();
+        }
+    }
+
     return {
         update,
         draw,
@@ -1332,6 +1451,7 @@ const GameFunctions = (function () {
         togglePause,
         backToMenu,
         gameOver,
+        triggerSpecial,
         ship,
         bullets,
         asteroids,
