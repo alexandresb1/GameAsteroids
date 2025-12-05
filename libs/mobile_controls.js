@@ -10,34 +10,64 @@ const MobileControls = (function () {
     const JOYSTICK_MAX_DISTANCE = 50; // pixels
     const JOYSTICK_DEADZONE = 0.2; // 20% de zona morta
 
-    // Detectar se é dispositivo mobile
-    function detectMobile() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent.toLowerCase()) ||
-                   ('ontouchstart' in window) ||
-                   (navigator.maxTouchPoints > 0);
-        
-        console.log('Dispositivo mobile detectado:', isMobile);
-        return isMobile;
-    }
-
     // Inicializar controles mobile
     function init() {
-        detectMobile();
+        // Verificar se modo mobile está ativado nas configurações
+        if (typeof ProgressionSystem !== 'undefined') {
+            isMobile = ProgressionSystem.isMobileMode();
+        }
+        
+        console.log('=== MODO MOBILE ===');
+        console.log('Modo mobile ativado?', isMobile);
         
         if (!isMobile) {
-            console.log('Desktop detectado - controles mobile desabilitados');
+            console.log('Modo mobile desativado. Ative nas Configurações.');
             return;
         }
 
         console.log('Inicializando controles mobile...');
         createMobileUI();
         setupTouchEvents();
+        adjustViewport();
+        console.log('Controles mobile inicializados!');
+    }
+    
+    // Ajustar viewport para mobile
+    function adjustViewport() {
+        // Forçar viewport mobile
+        let viewport = document.querySelector('meta[name="viewport"]');
+        if (viewport) {
+            viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover');
+        }
+        
+        // Ajustar canvas para tela cheia
+        const canvas = document.getElementById('gameCanvas');
+        if (canvas) {
+            canvas.style.width = '100vw';
+            canvas.style.height = '100vh';
+        }
+        
+        console.log('Viewport ajustado para mobile');
     }
 
     // Criar interface mobile
     function createMobileUI() {
         const html = `
+            <!-- HUD Mobile Simplificada -->
+            <div class="mobile-hud-compact">
+                <div class="mobile-hud-item">
+                    <span class="mobile-hud-label">Score</span>
+                    <span class="mobile-hud-value" id="mobileScore">0</span>
+                </div>
+                <div class="mobile-hud-item">
+                    <span class="mobile-hud-label">Vidas</span>
+                    <span class="mobile-hud-value" id="mobileLives">3</span>
+                </div>
+            </div>
+            
+            <!-- Botão de Pause Mobile -->
+            <button class="mobile-pause-btn" id="mobilePauseBtn">⏸</button>
+            
             <!-- Controles Mobile -->
             <div id="mobileControls" class="mobile-controls">
                 <!-- Joystick Virtual -->
@@ -50,18 +80,38 @@ const MobileControls = (function () {
                 <!-- Botão de Especial -->
                 <div id="specialButton" class="special-button">
                     <span class="special-icon">⚡</span>
-                    <span class="special-label">ESPECIAL</span>
                 </div>
             </div>
         `;
 
         $('body').append(html);
+        console.log('HTML dos controles mobile adicionado ao body');
 
         // Carregar CSS
-        $('<link>', {
+        const $link = $('<link>', {
             rel: 'stylesheet',
             href: 'css/mobile_controls.css'
+        });
+        
+        $link.on('load', () => {
+            console.log('CSS dos controles mobile carregado com sucesso');
+        });
+        
+        $link.on('error', () => {
+            console.error('ERRO ao carregar CSS dos controles mobile!');
+        });
+        
+        $link.appendTo('head');
+        
+        // Carregar CSS da HUD mobile
+        $('<link>', {
+            rel: 'stylesheet',
+            href: 'css/mobile_hud.css'
         }).appendTo('head');
+        
+        // Adicionar classe mobile-mode ao body
+        $('body').addClass('mobile-mode');
+        console.log('Classe mobile-mode adicionada ao body');
     }
 
     // Configurar eventos de touch
@@ -76,13 +126,34 @@ const MobileControls = (function () {
 
         // Eventos do Botão Especial
         $specialButton.on('touchstart', handleSpecialPress);
+        
+        // Evento do Botão de Pause
+        $('#mobilePauseBtn').on('click touchstart', function(e) {
+            e.preventDefault();
+            if (typeof GameFunctions !== 'undefined') {
+                GameFunctions.togglePause();
+            }
+        });
 
         // Prevenir scroll e zoom em mobile
         $(document).on('touchmove', function(e) {
-            if ($(e.target).closest('.mobile-controls').length) {
+            if ($(e.target).closest('.mobile-controls, .mobile-hud-compact, .mobile-pause-btn').length) {
                 e.preventDefault();
             }
         }, { passive: false });
+        
+        // Atualizar HUD mobile periodicamente
+        setInterval(updateMobileHUD, 100);
+    }
+    
+    // Atualizar HUD mobile
+    function updateMobileHUD() {
+        if (!isMobile) return;
+        
+        if (typeof GameFunctions !== 'undefined') {
+            $('#mobileScore').text(GameFunctions.getScore());
+            $('#mobileLives').text(GameFunctions.getLives());
+        }
     }
 
     // Handlers do Joystick
@@ -188,12 +259,19 @@ const MobileControls = (function () {
 
     // Mostrar/esconder controles
     function show() {
+        console.log('MobileControls.show() chamado. isMobile:', isMobile);
         if (isMobile) {
-            $('#mobileControls').fadeIn(300);
+            const $controls = $('#mobileControls');
+            console.log('Elemento #mobileControls encontrado:', $controls.length > 0);
+            $controls.css('display', 'block').fadeIn(300);
+            console.log('Controles mobile exibidos');
+        } else {
+            console.log('Não é mobile, controles não serão exibidos');
         }
     }
 
     function hide() {
+        console.log('MobileControls.hide() chamado');
         if (isMobile) {
             $('#mobileControls').fadeOut(300);
         }

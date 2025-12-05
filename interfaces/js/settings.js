@@ -28,12 +28,26 @@ const SettingsHUD = (function () {
             </div>
 
             <div class="settings-section">
+                <h2>MODO MOBILE</h2>
+                <p class="settings-description">
+                    Ative para usar controles touch (joystick virtual e tiro automático). Ideal para celulares e tablets.
+                </p>
+                <div class="mobile-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="mobileToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="mobileStatus" class="toggle-label">DESATIVADO</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
                 <h2>DADOS DO JOGO</h2>
                 <p class="settings-description">
                     Cuidado! Esta ação apagará todo o seu progresso, incluindo recordes e naves desbloqueadas.
                 </p>
                 <button id="resetProgressBtn" class="settings-button danger-button">
-                    ⚠️ RESETAR PROGRESSO
+                    RESETAR PROGRESSO
                 </button>
             </div>
         </div>
@@ -73,6 +87,25 @@ const SettingsHUD = (function () {
             }).appendTo('head');
 
             // Eventos
+            
+            // Toggle Modo Mobile
+            const $mobileToggle = $('#mobileToggle');
+            const $mobileStatus = $('#mobileStatus');
+            
+            // Carregar estado atual
+            if (typeof ProgressionSystem !== 'undefined') {
+                const isMobile = ProgressionSystem.isMobileMode();
+                $mobileToggle.prop('checked', isMobile);
+                $mobileStatus.text(isMobile ? 'ATIVADO' : 'DESATIVADO');
+            }
+            
+            $mobileToggle.on('change', function () {
+                const enabled = $(this).is(':checked');
+                if (typeof ProgressionSystem !== 'undefined') {
+                    ProgressionSystem.setMobileMode(enabled);
+                }
+            });
+            
             $('#resetProgressBtn').on('click', function () {
                 $('#confirmModal').css('display', 'flex').hide().fadeIn(200);
             });

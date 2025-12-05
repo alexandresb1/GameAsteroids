@@ -1,7 +1,7 @@
 const GameFunctions = (function () {
 
     // INÍCIO: VARIÁVEIS GLOBAIS DO JOGO.
-    const ship = { x: 0, y: 0, angle: 0, velocityX: 0, velocityY: 0, radius: 10, invulnerable: false, invulnerableTime: 0 };
+    const ship = { x: 0, y: 0, angle: 0, velocityX: 0, velocityY: 0, radius: 10, baseRadius: 10, invulnerable: false, invulnerableTime: 0 };
     const bullets = [];
     const asteroids = [];
     const powerups = [];
@@ -36,6 +36,22 @@ const GameFunctions = (function () {
 
     const INVULNERABLE_DURATION = 2.0; // 2 segundos
     let lastFrameTime = 0;
+    
+    // FUNÇÃO PARA ESCALA RESPONSIVA DOS ELEMENTOS
+    function getGameScale() {
+        const width = $(window).width();
+        const height = $(window).height();
+        const baseWidth = 1200; // Largura de referência (desktop)
+        const baseHeight = 800; // Altura de referência
+        
+        // Calcular escala baseada no menor viewport
+        const scaleX = width / baseWidth;
+        const scaleY = height / baseHeight;
+        const scale = Math.min(scaleX, scaleY);
+        
+        // Limitar escala entre 0.4 e 1.0 (40% a 100%)
+        return Math.max(0.4, Math.min(1.0, scale));
+    }
 
     // SISTEMA DE POWERUPS E MUNIÇÕES ESPECIAIS
     let currentAmmoType = 'normal'; // 'normal', 'double', 'triple', 'piercing'
@@ -43,12 +59,12 @@ const GameFunctions = (function () {
     const SPECIAL_AMMO_DURATION = 15.0; // 15 segundos
     const POWERUP_DROP_CHANCE = 0.15; // 15% de chance de drop
 
-    // Tipos de powerups
+    // Tipos de powerups (tamanhos base)
     const POWERUP_TYPES = {
-        DOUBLE_SHOT: { color: '#ff4444', size: 25, name: 'Tiro Duplo' },
-        TRIPLE_SHOT: { color: '#44ff44', size: 25, name: 'Tiro Triplo' },
-        PIERCING_SHOT: { color: '#4444ff', size: 25, name: 'Tiro Perfurante' },
-        EXTRA_LIFE: { color: '#ffff44', size: 30, name: 'Vida Extra' }
+        DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Tiro Duplo' },
+        TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Tiro Triplo' },
+        PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Tiro Perfurante' },
+        EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Vida Extra' }
     };
 
     // SISTEMA DE ATRIBUTOS DAS NAVES
@@ -308,6 +324,44 @@ const GameFunctions = (function () {
                 e.preventDefault();
             }
         });
+        
+        // Listener de clique no canvas para botão de pause
+        $('#gameCanvas').on('click touchstart', function(e) {
+            if (gameState !== 'playing') return;
+            
+            const canvas = this;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            // Obter coordenadas do clique/toque
+            let clientX, clientY;
+            if (e.type === 'touchstart') {
+                const touch = e.originalEvent.touches[0];
+                clientX = touch.clientX;
+                clientY = touch.clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            
+            const x = (clientX - rect.left) * scaleX;
+            const y = (clientY - rect.top) * scaleY;
+            
+            // Verificar se clicou na área do botão de pause (centro da barra superior)
+            const hudBarHeight = Math.max(50, Math.min(70, canvas.height * 0.08));
+            const topSectionWidth = canvas.width / 3;
+            const pauseX = topSectionWidth * 1.5;
+            const pauseY = hudBarHeight / 2;
+            const pauseRadius = 50; // Área clicável
+            
+            const distance = Math.sqrt((x - pauseX) ** 2 + (y - pauseY) ** 2);
+            
+            if (distance < pauseRadius && y < hudBarHeight) {
+                togglePause();
+                e.preventDefault();
+            }
+        });
     }
 
     function updateShooting(currentTime) {
@@ -333,6 +387,9 @@ const GameFunctions = (function () {
     function Shoot() {
         const baseVelX = Math.sin(ship.angle) * BULLET_SPEED;
         const baseVelY = -Math.cos(ship.angle) * BULLET_SPEED;
+        const scale = getGameScale();
+        const bulletRadius = 4 * scale;
+        const piercingRadius = 5 * scale;
 
         switch (currentAmmoType) {
             case 'double':
@@ -343,7 +400,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: Math.sin(ship.angle - offset) * BULLET_SPEED,
                     velocityY: -Math.cos(ship.angle - offset) * BULLET_SPEED,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'double',
                     color: '#ff4444',
                     useSprite: true,
@@ -354,7 +411,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: Math.sin(ship.angle + offset) * BULLET_SPEED,
                     velocityY: -Math.cos(ship.angle + offset) * BULLET_SPEED,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'double',
                     color: '#ff4444',
                     useSprite: true,
@@ -370,7 +427,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: baseVelX,
                     velocityY: baseVelY,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'triple',
                     color: '#44ff44',
                     useSprite: true,
@@ -381,7 +438,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: Math.sin(ship.angle - spread) * BULLET_SPEED,
                     velocityY: -Math.cos(ship.angle - spread) * BULLET_SPEED,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'triple',
                     color: '#44ff44',
                     useSprite: true,
@@ -392,7 +449,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: Math.sin(ship.angle + spread) * BULLET_SPEED,
                     velocityY: -Math.cos(ship.angle + spread) * BULLET_SPEED,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'triple',
                     color: '#44ff44',
                     useSprite: true,
@@ -407,7 +464,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: baseVelX,
                     velocityY: baseVelY,
-                    radius: 5,
+                    radius: piercingRadius,
                     type: 'piercing',
                     color: '#4444ff',
                     piercing: true
@@ -420,7 +477,7 @@ const GameFunctions = (function () {
                     y: ship.y,
                     velocityX: baseVelX,
                     velocityY: baseVelY,
-                    radius: 4, // Ajustado para o tamanho do sprite
+                    radius: bulletRadius,
                     type: 'normal',
                     color: 'red',
                     useSprite: true,
@@ -441,6 +498,8 @@ const GameFunctions = (function () {
 
         // Criar shockwave - onda de tiros em todas as direções
         const angleStep = (Math.PI * 2) / SHOCKWAVE_BULLETS; // Dividir 360° pelos tiros
+        const scale = getGameScale();
+        const bulletRadius = 4 * scale;
 
         for (let i = 0; i < SHOCKWAVE_BULLETS; i++) {
             const angle = i * angleStep;
@@ -450,7 +509,7 @@ const GameFunctions = (function () {
                 y: ship.y,
                 velocityX: Math.sin(angle) * BULLET_SPEED,
                 velocityY: -Math.cos(angle) * BULLET_SPEED,
-                radius: 4,
+                radius: bulletRadius,
                 type: 'shockwave',
                 color: '#ffaa00', // Laranja para destacar
                 useSprite: true,
@@ -544,10 +603,15 @@ const GameFunctions = (function () {
 
         const spriteIndex = Math.floor(Math.random() * asteroidSprites.length);
 
+        // Calcular tamanho responsivo do asteroide
+        const scale = getGameScale();
+        const baseRadius = 30 + Math.random() * 20;
+        const scaledRadius = baseRadius * scale;
+        
         const asteroid = {
             x: x,
             y: y,
-            radius: 30 + Math.random() * 20,
+            radius: scaledRadius,
             velocityX: velocityX,
             velocityY: velocityY,
             sprite: asteroidSprites[spriteIndex],
@@ -567,13 +631,14 @@ const GameFunctions = (function () {
         const powerupTypes = Object.keys(POWERUP_TYPES);
         const randomType = powerupTypes[Math.floor(Math.random() * powerupTypes.length)];
         const config = POWERUP_TYPES[randomType];
+        const scale = getGameScale();
 
         powerups.push({
             x: x,
             y: y,
             type: randomType,
             color: config.color,
-            size: config.size,
+            size: config.baseSize * scale,
             name: config.name,
             lifetime: 10.0, // 10 segundos para coletar
             pulseTimer: 0
@@ -741,10 +806,18 @@ const GameFunctions = (function () {
         ship.x += ship.velocityX * deltaTime;
         ship.y += ship.velocityY * deltaTime;
 
+        // Definir limites da área de jogo (considerando as barras HUD)
+        const hudBarHeight = Math.max(50, Math.min(70, height * 0.08));
+        const playAreaTop = hudBarHeight;
+        const playAreaBottom = height - hudBarHeight;
+
+        // Wrap horizontal (normal)
         if (ship.x > width) ship.x = 0;
         if (ship.x < 0) ship.x = width;
-        if (ship.y > height) ship.y = 0;
-        if (ship.y < 0) ship.y = height;
+        
+        // Wrap vertical (considerando as barras HUD)
+        if (ship.y > playAreaBottom) ship.y = playAreaTop;
+        if (ship.y < playAreaTop) ship.y = playAreaBottom;
 
         // Gerenciar invulnerabilidade
         if (ship.invulnerable) {
@@ -756,14 +829,22 @@ const GameFunctions = (function () {
     }
 
     function updateAsteroids(width, height, deltaTime) {
+        // Definir limites da área de jogo (considerando as barras HUD)
+        const hudBarHeight = Math.max(50, Math.min(70, height * 0.08));
+        const playAreaTop = hudBarHeight;
+        const playAreaBottom = height - hudBarHeight;
+        
         asteroids.forEach((a, ai) => {
             a.x += a.velocityX * deltaTime;
             a.y += a.velocityY * deltaTime;
 
+            // Wrap horizontal (normal)
             if (a.x > width) a.x = 0;
             if (a.x < 0) a.x = width;
-            if (a.y > height) a.y = 0;
-            if (a.y < 0) a.y = height;
+            
+            // Wrap vertical (considerando as barras HUD)
+            if (a.y > playAreaBottom) a.y = playAreaTop;
+            if (a.y < playAreaTop) a.y = playAreaBottom;
 
             // Colisão com a nave (só se não estiver invulnerável)
             if (!ship.invulnerable) {
@@ -1198,8 +1279,12 @@ const GameFunctions = (function () {
             ctx.translate(ship.x, ship.y);
             ctx.rotate(ship.angle);
 
-            const spriteWidth = 40;  // ajuste conforme tamanho do sprite
-            const spriteHeight = 40;
+            const scale = getGameScale();
+            const spriteWidth = 40 * scale;
+            const spriteHeight = 40 * scale;
+            
+            // Atualizar raio da nave baseado na escala
+            ship.radius = ship.baseRadius * scale;
 
             // Efeito fantasma durante invulnerabilidade
             if (ship.invulnerable) ctx.globalAlpha = 0.5;
@@ -1262,9 +1347,10 @@ const GameFunctions = (function () {
                 ctx.translate(b.x, b.y);
                 ctx.rotate(b.angle);
 
-                // Tamanho do sprite da bala (ajuste conforme necessário)
-                const bulletWidth = 8;
-                const bulletHeight = 16;
+                // Tamanho do sprite da bala (responsivo)
+                const scale = getGameScale();
+                const bulletWidth = 8 * scale;
+                const bulletHeight = 16 * scale;
 
                 ctx.drawImage(
                     bulletSprite,
@@ -1339,81 +1425,147 @@ const GameFunctions = (function () {
             ctx.globalAlpha = 1; // Resetar alpha
         });
 
-        // --- HUD RESPONSIVO ---
+        // --- HUD UNIFICADA E RESPONSIVA ---
 
         // Função auxiliar para tamanho de fonte responsivo
         const getResponsiveFontSize = (baseSize) => {
-            const scaleFactor = Math.min(canvas.width / 1200, 1); // Baseado em 1200px de largura
-            return Math.max(Math.floor(baseSize * scaleFactor), 10); // Mínimo 10px
+            const scaleFactor = Math.min(canvas.width / 1200, 1);
+            return Math.max(Math.floor(baseSize * scaleFactor), 8);
         };
 
-        const fontSizeLg = getResponsiveFontSize(20);
-        const fontSizeMd = getResponsiveFontSize(14);
-        const fontSizeSm = getResponsiveFontSize(10);
-        const padding = 20;
+        const fontSizeLg = getResponsiveFontSize(16);
+        const fontSizeMd = getResponsiveFontSize(12);
+        const fontSizeSm = getResponsiveFontSize(9);
+        const padding = 10;
+        
+        // Altura das barras (compacta e responsiva)
+        const barHeight = Math.max(50, Math.min(70, canvas.height * 0.08));
 
-        // 1. TOP ESQUERDO: Score, Vidas, Integridade
-        ctx.textAlign = 'left';
-
-        // Score
+        // ========== BARRA SUPERIOR ==========
+        const topBarY = 0;
+        
+        // Desenhar barra superior com gradiente
+        const topGradient = ctx.createLinearGradient(0, 0, 0, barHeight);
+        topGradient.addColorStop(0, 'rgba(0, 0, 0, 0.95)');
+        topGradient.addColorStop(1, 'rgba(0, 0, 0, 0.80)');
+        ctx.fillStyle = topGradient;
+        ctx.fillRect(0, 0, canvas.width, barHeight);
+        
+        // Borda inferior
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, barHeight);
+        ctx.lineTo(canvas.width, barHeight);
+        ctx.stroke();
+        
+        // Informações na barra superior
+        const topBarCenterY = barHeight / 2;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Dividir em 3 seções: Powerup | Pause/ESC | Especial
+        const topSectionWidth = canvas.width / 3;
+        
+        // 1. POWERUP (esquerda)
+        if (currentAmmoType !== 'normal' && ammoTimer > 0) {
+            const ammoInfo = POWERUP_TYPES[currentAmmoType.toUpperCase() + '_SHOT'];
+            if (ammoInfo) {
+                ctx.fillStyle = '#00ffff';
+                ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+                ctx.fillText('POWERUP', topSectionWidth * 0.5, topBarCenterY - 10);
+                ctx.fillStyle = ammoInfo.color;
+                ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+                ctx.fillText(`${Math.ceil(ammoTimer)}s`, topSectionWidth * 0.5, topBarCenterY + 8);
+            }
+        }
+        
+        // 2. PAUSE (centro)
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('PAUSE', topSectionWidth * 1.5, topBarCenterY - 10);
         ctx.fillStyle = 'white';
-        ctx.font = `${fontSizeLg}px "Press Start 2P"`;
-        ctx.fillText(`SCORE: ${score}`, padding, padding + fontSizeLg);
-
-        // Vidas
         ctx.font = `${fontSizeMd}px "Press Start 2P"`;
-        ctx.fillText(`VIDAS: ${lives}`, padding, padding + fontSizeLg * 2.5);
-
-        // Integridade
+        ctx.fillText('ESC / ⏸', topSectionWidth * 1.5, topBarCenterY + 8);
+        
+        // 3. ESPECIAL (direita)
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('ESPECIAL', topSectionWidth * 2.5, topBarCenterY - 10);
+        
+        if (specialCooldown > 0) {
+            ctx.fillStyle = '#888888';
+            ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+            ctx.fillText(`${Math.ceil(specialCooldown)}s`, topSectionWidth * 2.5, topBarCenterY + 8);
+        } else {
+            ctx.fillStyle = '#ffaa00';
+            ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+            ctx.fillText('PRONTO!', topSectionWidth * 2.5, topBarCenterY + 8);
+        }
+        
+        // ========== BARRA INFERIOR ==========
+        const bottomBarY = canvas.height - barHeight;
+        
+        // Desenhar barra inferior com gradiente
+        const bottomGradient = ctx.createLinearGradient(0, bottomBarY, 0, canvas.height);
+        bottomGradient.addColorStop(0, 'rgba(0, 0, 0, 0.80)');
+        bottomGradient.addColorStop(1, 'rgba(0, 0, 0, 0.95)');
+        ctx.fillStyle = bottomGradient;
+        ctx.fillRect(0, bottomBarY, canvas.width, barHeight);
+        
+        // Borda superior
+        ctx.strokeStyle = 'rgba(0, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, bottomBarY);
+        ctx.lineTo(canvas.width, bottomBarY);
+        ctx.stroke();
+        
+        // Informações na barra inferior
+        const bottomBarCenterY = bottomBarY + barHeight / 2;
+        
+        // Dividir em 4 seções
+        const bottomSectionWidth = canvas.width / 4;
+        
+        // 1. SCORE
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('SCORE', bottomSectionWidth * 0.5, bottomBarCenterY - 10);
+        ctx.fillStyle = 'white';
+        ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+        ctx.fillText(`${score}`, bottomSectionWidth * 0.5, bottomBarCenterY + 8);
+        
+        // 2. VIDAS
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('VIDAS', bottomSectionWidth * 1.5, bottomBarCenterY - 10);
+        ctx.fillStyle = lives <= 1 ? '#ff4444' : 'white';
+        ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+        ctx.fillText(`${lives}`, bottomSectionWidth * 1.5, bottomBarCenterY + 8);
+        
+        // 3. INTEGRIDADE
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('INTEGRIDADE', bottomSectionWidth * 2.5, bottomBarCenterY - 10);
         if (hitsRemaining < currentShipAttributes.resistance) {
             ctx.fillStyle = hitsRemaining === 1 ? '#ff4444' : '#ffaa44';
         } else {
             ctx.fillStyle = '#44ff44';
         }
-        ctx.fillText(`INTEGRIDADE: ${hitsRemaining}/${currentShipAttributes.resistance}`, padding, padding + fontSizeLg * 2.5 + fontSizeMd * 1.5);
-
-
-        // 2. INFERIOR ESQUERDO: Powerups e Especial
-        let bottomY = canvas.height - padding;
-
-        // Especial
-        if (specialCooldown > 0) {
-            ctx.fillStyle = '#888888';
-            ctx.fillText(`ESPECIAL [X]: ${Math.ceil(specialCooldown)}s`, padding, bottomY);
-        } else {
-            ctx.fillStyle = '#ffaa00';
-            ctx.fillText(`ESPECIAL [X]: PRONTO!`, padding, bottomY);
-        }
-
-        // Powerup Ativo (acima do especial)
-        if (currentAmmoType !== 'normal' && ammoTimer > 0) {
-            const ammoInfo = POWERUP_TYPES[currentAmmoType.toUpperCase() + '_SHOT'];
-            if (ammoInfo) {
-                ctx.fillStyle = ammoInfo.color;
-                ctx.fillText(`${ammoInfo.name}: ${Math.ceil(ammoTimer)}s`, padding, bottomY - fontSizeMd * 1.8);
-            }
-        }
-
-
-        // 3. INFERIOR CENTRAL: Mapa
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#aaaaaa';
         ctx.font = `${fontSizeMd}px "Press Start 2P"`;
-        ctx.fillText(`MAPA: ${currentBackgroundIndex}/5`, canvas.width / 2, canvas.height - padding);
-
-
-        // 4. INFERIOR DIREITO: Dificuldade
-        ctx.textAlign = 'right';
-        ctx.fillStyle = 'white'; // Texto branco conforme solicitado
+        ctx.fillText(`${hitsRemaining}/${currentShipAttributes.resistance}`, bottomSectionWidth * 2.5, bottomBarCenterY + 8);
+        
+        // 4. DIFICULDADE
+        ctx.fillStyle = '#00ffff';
         ctx.font = `${fontSizeSm}px "Press Start 2P"`;
-
-        const lineHeight = fontSizeSm * 1.8;
-        ctx.fillText(`ASTEROIDES: ${asteroids.length}/${currentMaxAsteroids}`, canvas.width - padding, canvas.height - padding - lineHeight * 2);
-        ctx.fillText(`HITS/AST: ${currentHitsPerAsteroid}`, canvas.width - padding, canvas.height - padding - lineHeight);
-        ctx.fillText(`VELOCIDADE: ${currentSpeedMultiplier.toFixed(1)}x`, canvas.width - padding, canvas.height - padding);
+        ctx.fillText('DIFICULDADE', bottomSectionWidth * 3.5, bottomBarCenterY - 10);
+        ctx.fillStyle = 'white';
+        ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+        ctx.fillText(`${currentSpeedMultiplier.toFixed(1)}x`, bottomSectionWidth * 3.5, bottomBarCenterY + 8);
 
         // Resetar alinhamento
         ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
 
     }
     // FIM: FUNÇÃO PARA DESENHAR ELEMENTOS DO JOGO.

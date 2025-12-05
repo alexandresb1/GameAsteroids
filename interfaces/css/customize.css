@@ -414,3 +414,32 @@
         font-size: 0.85em;
     }
 }
+
+
+/* Responsividade Mobile - Apenas Scroll */
+@media (max-width: 768px), (max-height: 700px) {
+    .customize-container {
+        max-height: 85vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+}
+
+/* Scroll suave e estilizado */
+.customize-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.customize-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.customize-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+.customize-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.8);
+}

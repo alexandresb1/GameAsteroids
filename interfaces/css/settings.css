@@ -12,6 +12,8 @@
     display: flex;
     flex-direction: column;
     gap: 30px;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .settings-title {
@@ -46,7 +48,7 @@
     margin-bottom: 20px;
 }
 
-/* Botões */
+/* Botões Base */
 .settings-button {
     padding: 15px 30px;
     font-size: 1em;
@@ -59,62 +61,63 @@
     width: 100%;
 }
 
-.danger-button {
-    background: linear-gradient(45deg, #330000, #660000);
-    border: 2px solid #ff4444;
-    color: #ff4444;
-}
-
-.danger-button:hover {
-    background: linear-gradient(45deg, #ff4444, #cc0000);
-    color: white;
-    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
-    transform: scale(1.02);
-}
-
-.back-button {
-    background: transparent;
-    border: 2px solid #00ffff;
-    color: #00ffff;
-}
-
-.back-button:hover {
-    background: rgba(0, 255, 255, 0.1);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
-    transform: translateY(-2px);
-}
-
 /* Botões de Save */
 .save-buttons {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 10px;
 }
 
-.export-button {
+.settings-button.export-button {
     background: linear-gradient(45deg, #003300, #006600);
     border: 2px solid #00ff00;
     color: #00ff00;
 }
 
-.export-button:hover {
+.settings-button.export-button:hover {
     background: linear-gradient(45deg, #00ff00, #00cc00);
     color: white;
     box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
     transform: scale(1.02);
 }
 
-.import-button {
+.settings-button.import-button {
     background: linear-gradient(45deg, #000033, #000066);
     border: 2px solid #4444ff;
     color: #4444ff;
 }
 
-.import-button:hover {
+.settings-button.import-button:hover {
     background: linear-gradient(45deg, #4444ff, #0000cc);
     color: white;
     box-shadow: 0 0 20px rgba(68, 68, 255, 0.6);
     transform: scale(1.02);
+}
+
+.settings-button.danger-button {
+    background: linear-gradient(45deg, #330000, #660000);
+    border: 2px solid #ff4444;
+    color: #ff4444;
+}
+
+.settings-button.danger-button:hover {
+    background: linear-gradient(45deg, #ff4444, #cc0000);
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.6);
+    transform: scale(1.02);
+}
+
+.settings-button.back-button {
+    background: transparent;
+    border: 2px solid #00ffff;
+    color: #00ffff;
+}
+
+.settings-button.back-button:hover {
+    background: rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+    transform: translateY(-2px);
 }
 
 /* Modal de Confirmação */
@@ -205,4 +208,107 @@
 .confirm-button:hover {
     background: #cc0000;
     box-shadow: 0 0 15px rgba(255, 0, 0, 0.6);
+}
+
+
+/* Toggle Switch para Modo Mobile */
+.mobile-toggle {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 30px;
+}
+
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #555;
+    transition: 0.4s;
+    border-radius: 30px;
+    border: 2px solid #00ffff;
+}
+
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 20px;
+    width: 20px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+}
+
+input:checked + .toggle-slider {
+    background-color: #00ffff;
+}
+
+input:checked + .toggle-slider:before {
+    transform: translateX(30px);
+    background-color: #000;
+}
+
+.toggle-label {
+    color: #00ffff;
+    font-size: 0.9em;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Responsividade Mobile */
+@media (max-width: 768px), (max-height: 700px) {
+    .settings-container {
+        max-height: 85vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 20px;
+    }
+    
+    .save-buttons {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .settings-container {
+        padding: 15px;
+        width: 95%;
+    }
+}
+
+/* Scroll suave e estilizado */
+.settings-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.settings-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+}
+
+.settings-container::-webkit-scrollbar-thumb {
+    background: rgba(0, 255, 255, 0.5);
+    border-radius: 4px;
+}
+
+.settings-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 255, 255, 0.8);
 }

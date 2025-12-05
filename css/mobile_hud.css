@@ -1,0 +1,222 @@
+/* HUD Otimizada para Mobile */
+
+/* Quando modo mobile está ativo */
+body.mobile-mode {
+    /* Esconder HUD original completamente */
+    #hud,
+    .debug-info,
+    .extra-info,
+    #integridade,
+    #especial,
+    #progresso,
+    #velocidade,
+    #score,
+    #vidas {
+        display: none !important;
+    }
+    
+    /* Criar barra inferior preta com informações */
+    .mobile-bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.7));
+        border-top: 2px solid rgba(0, 255, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        padding: 0 20px;
+        z-index: 90;
+        box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+    }
+    
+    .mobile-info-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        flex: 1;
+    }
+    
+    .mobile-info-label {
+        font-size: 0.5em;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .mobile-info-value {
+        font-size: 0.7em;
+        color: #00ffff;
+        font-weight: bold;
+        text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+    }
+    
+    /* Ajustar controles para não ficarem atrás da barra */
+    .joystick-area {
+        bottom: 90px !important;
+    }
+    
+    .special-button {
+        bottom: 100px !important;
+    }
+
+    /* Botões de UI (pause, som) no topo */
+    .ui-buttons {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        gap: 10px;
+        z-index: 150;
+    }
+
+    .ui-buttons button {
+        width: 45px;
+        height: 45px;
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid #00ffff;
+        border-radius: 8px;
+        color: #00ffff;
+        font-size: 1.2em;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Garantir que controles mobile não sejam cobertos */
+    .mobile-controls {
+        z-index: 100;
+    }
+
+    /* Ajustar canvas para não ficar atrás dos controles */
+    #gameCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+
+    /* Notificações de powerup - posição superior */
+    .powerup-notification {
+        top: 70px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        font-size: 0.7em !important;
+    }
+
+    /* Mensagens do jogo */
+    .game-message {
+        top: 50% !important;
+        font-size: 1em !important;
+    }
+}
+
+/* HUD compacta para mobile */
+.mobile-hud-compact {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.8);
+    padding: 10px 20px;
+    border-radius: 15px;
+    border: 2px solid rgba(0, 255, 255, 0.6);
+    display: none !important; /* ESCONDER - HUD agora é no canvas */
+    gap: 20px;
+    align-items: center;
+    z-index: 150;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+}
+
+.mobile-hud-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.mobile-hud-label {
+    font-size: 0.6em;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.mobile-hud-value {
+    font-size: 1em;
+    color: #00ffff;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+}
+
+/* Botão de pause mobile */
+.mobile-pause-btn {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    color: #00ffff;
+    font-size: 1.5em;
+    cursor: pointer;
+    display: none !important; /* ESCONDER - HUD agora é no canvas */
+    align-items: center;
+    justify-content: center;
+    z-index: 150;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4);
+}
+
+.mobile-pause-btn:active {
+    transform: scale(0.95);
+    background: rgba(0, 255, 255, 0.2);
+}
+
+/* Responsividade */
+@media (max-width: 480px) {
+    .mobile-hud-compact {
+        padding: 8px 15px;
+        gap: 15px;
+    }
+
+    .mobile-hud-value {
+        font-size: 0.9em;
+    }
+
+    .mobile-pause-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3em;
+    }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+    .mobile-hud-compact {
+        top: 5px;
+        padding: 5px 15px;
+    }
+
+    .mobile-pause-btn {
+        top: 5px;
+        right: 5px;
+        width: 40px;
+        height: 40px;
+    }
+
+    .joystick-area {
+        bottom: 10px !important;
+        left: 10px !important;
+    }
+
+    .special-button {
+        bottom: 20px !important;
+        right: 10px !important;
+    }
+}

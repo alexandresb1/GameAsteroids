@@ -11,6 +11,9 @@ const ProgressionSystem = (function () {
 
     // Acumulador de tempo da sessão atual (em segundos)
     let currentSessionTime = 0;
+    
+    // Modo mobile (controlado pelo usuário)
+    const MOBILE_MODE_KEY = 'asteroids_mobile_mode';
 
     // Configurações de desbloqueio (agora vem do GameData)
     const UNLOCK_REQUIREMENTS = {};
@@ -130,6 +133,19 @@ const ProgressionSystem = (function () {
     function resetSessionTime() {
         // Resetar o acumulador da sessão (usado quando volta ao menu sem salvar)
         currentSessionTime = 0;
+    }
+
+    // Gerenciar modo mobile
+    function isMobileMode() {
+        return localStorage.getItem(MOBILE_MODE_KEY) === 'true';
+    }
+
+    function setMobileMode(enabled) {
+        localStorage.setItem(MOBILE_MODE_KEY, enabled.toString());
+        console.log('Modo mobile', enabled ? 'ATIVADO' : 'DESATIVADO');
+        
+        // Recarregar página para aplicar mudanças
+        window.location.reload();
     }
 
     // Gerenciar nave selecionada
@@ -387,6 +403,8 @@ const ProgressionSystem = (function () {
         addPlayTime,
         saveCurrentSession,
         resetSessionTime,
+        isMobileMode,
+        setMobileMode,
 
         // Naves
         getSelectedShip,
