@@ -28,6 +28,20 @@ const SettingsHUD = (function () {
             </div>
 
             <div class="settings-section">
+                <h2>ÁUDIO</h2>
+                <p class="settings-description">
+                    Ative ou desative a música de fundo do jogo.
+                </p>
+                <div class="mobile-toggle">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="audioToggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span id="audioStatus" class="toggle-label">DESATIVADO</span>
+                </div>
+            </div>
+
+            <div class="settings-section">
                 <h2>MODO MOBILE</h2>
                 <p class="settings-description">
                     Ative para usar controles touch (joystick virtual e tiro automático). Ideal para celulares e tablets.
@@ -88,6 +102,31 @@ const SettingsHUD = (function () {
 
             // Eventos
             
+            // Toggle Áudio
+            const $audioToggle = $('#audioToggle');
+            const $audioStatus = $('#audioStatus');
+            
+            // Carregar estado atual do áudio
+            if (typeof AudioManager !== 'undefined') {
+                const isMuted = AudioManager.getMutedState();
+                $audioToggle.prop('checked', !isMuted); // Invertido: checked = ativado
+                $audioStatus.text(isMuted ? 'DESATIVADO' : 'ATIVADO');
+            }
+            
+            $audioToggle.on('change', function () {
+                const enabled = $(this).is(':checked');
+                if (typeof AudioManager !== 'undefined') {
+                    const currentlyMuted = AudioManager.getMutedState();
+                    
+                    // Se o estado desejado é diferente do atual, fazer toggle
+                    if ((enabled && currentlyMuted) || (!enabled && !currentlyMuted)) {
+                        AudioManager.toggleMute();
+                    }
+                    
+                    $audioStatus.text(enabled ? 'ATIVADO' : 'DESATIVADO');
+                }
+            });
+            
             // Toggle Modo Mobile
             const $mobileToggle = $('#mobileToggle');
             const $mobileStatus = $('#mobileStatus');
@@ -103,6 +142,7 @@ const SettingsHUD = (function () {
                 const enabled = $(this).is(':checked');
                 if (typeof ProgressionSystem !== 'undefined') {
                     ProgressionSystem.setMobileMode(enabled);
+                    $mobileStatus.text(enabled ? 'ATIVADO' : 'DESATIVADO');
                 }
             });
             

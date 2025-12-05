@@ -16,6 +16,10 @@ const PauseHUD = (function () {
                 ▶️ Continuar
             </button>
             
+            <button id="toggleAudioBtn" class="pause-button audio-button">
+                🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>
+            </button>
+            
             <button id="endGameBtn" class="pause-button end-button">
                 🏁 Finalizar Jogo
             </button>
@@ -77,6 +81,22 @@ const PauseHUD = (function () {
                 GameFunctions.resume();
             });
 
+            $('#toggleAudioBtn').on('click', function () {
+                if (typeof AudioManager !== 'undefined') {
+                    const isMuted = AudioManager.toggleMute();
+                    const $status = $('#pauseAudioStatus');
+                    const $btn = $(this);
+                    
+                    if (isMuted) {
+                        $status.text('DESATIVADA');
+                        $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
+                    } else {
+                        $status.text('ATIVADA');
+                        $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
+                    }
+                }
+            });
+
             $('#endGameBtn').on('click', function () {
                 showEndGameConfirm();
             });
@@ -116,6 +136,21 @@ const PauseHUD = (function () {
                 display: 'flex',
                 opacity: 0
             });
+            
+            // Atualizar estado do botão de áudio
+            if (typeof AudioManager !== 'undefined') {
+                const isMuted = AudioManager.getMutedState();
+                const $status = $('#pauseAudioStatus');
+                const $btn = $('#toggleAudioBtn');
+                
+                if (isMuted) {
+                    $status.text('DESATIVADA');
+                    $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
+                } else {
+                    $status.text('ATIVADA');
+                    $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
+                }
+            }
 
             // Animação de entrada usando jQuery
             setTimeout(() => {
