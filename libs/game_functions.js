@@ -1104,8 +1104,8 @@ const GameFunctions = (function () {
             StartScreenHUD.show();
         }
 
-        // Tocar música do menu
-        AudioManager.playMenuMusic();
+        // Tocar música do menu (forçar restart porque estamos voltando do jogo)
+        AudioManager.playMenuMusic(true);
     }
 
     function resetGame() {

@@ -18,6 +18,7 @@ const AudioManager = (function () {
     let isMuted = true; // Começa mutado para evitar problemas de autoplay
     let userHasInteracted = false;
     let pendingTrack = null; // Para tocar depois da primeira interação
+    let currentContext = null; // 'menu' ou 'game' - rastreia o contexto atual
 
     // Detectar primeira interação do usuário
     function enableAudioOnFirstInteraction() {
@@ -43,7 +44,12 @@ const AudioManager = (function () {
             return Promise.resolve();
         }
 
-        stopCurrentTrack();
+        // Parar música atual (mas não resetar contexto)
+        if (currentTrack) {
+            currentTrack.pause();
+            currentTrack.currentTime = 0;
+        }
+        
         currentTrack = track;
 
         return currentTrack.play().catch(error => {
@@ -53,7 +59,16 @@ const AudioManager = (function () {
         });
     }
 
-    function playMenuMusic() {
+    function playMenuMusic(forceRestart = false) {
+        // Se já estamos no contexto do menu e não é para forçar restart, não fazer nada
+        if (currentContext === 'menu' && !forceRestart) {
+            console.log('Já estamos no menu, música continua tocando');
+            return Promise.resolve();
+        }
+
+        // Marcar que estamos no contexto do menu
+        currentContext = 'menu';
+
         // Selecionar aleatoriamente entre as faixas de menu
         const randomIndex = Math.floor(Math.random() * menuTracks.length);
         const selectedTrack = menuTracks[randomIndex];
@@ -62,6 +77,8 @@ const AudioManager = (function () {
     }
 
     function playGameMusic() {
+        // Marcar que estamos no contexto do jogo
+        currentContext = 'game';
         return playTrack(gameMusic);
     }
 
@@ -71,15 +88,24 @@ const AudioManager = (function () {
             currentTrack.currentTime = 0;
         }
         currentTrack = null;
+        // NÃO resetar currentContext aqui - manter o contexto para evitar reiniciar música
     }
 
     function toggleMute() {
         isMuted = !isMuted;
 
         if (isMuted) {
-            stopCurrentTrack();
+            // Pausar música mas manter o contexto
+            if (currentTrack) {
+                currentTrack.pause();
+            }
         } else if (userHasInteracted && pendingTrack) {
             playTrack(pendingTrack);
+        } else if (userHasInteracted && currentTrack) {
+            // Se já tem uma música carregada, apenas retomar
+            currentTrack.play().catch(error => {
+                console.log('Não foi possível retomar áudio:', error.message);
+            });
         }
 
         // Notificar mudança para atualizar UI
@@ -105,6 +131,11 @@ const AudioManager = (function () {
         return userHasInteracted;
     }
 
+    function resetContext() {
+        // Função para resetar completamente o contexto (usar apenas quando necessário)
+        currentContext = null;
+    }
+
     return {
         playMenuMusic,
         playGameMusic,
@@ -112,6 +143,7 @@ const AudioManager = (function () {
         toggleMute,
         setVolume,
         getMutedState,
-        hasUserInteracted
+        hasUserInteracted,
+        resetContext
     };
 })();
