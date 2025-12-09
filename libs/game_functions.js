@@ -286,7 +286,10 @@ const GameFunctions = (function () {
             }
             
             // Pause só dispara no keydown
-            if (e.key === KEY_PAUSE) togglePause();
+            if (e.key === KEY_PAUSE) {
+                console.log('ESC pressionado - gameState:', gameState);
+                togglePause();
+            }
         });
         
         $(document).keyup(e => keys[e.key] = false);
@@ -1053,6 +1056,12 @@ const GameFunctions = (function () {
     }
 
     function togglePause() {
+        // CRÍTICO: Não permitir pause/resume se não estiver em jogo
+        if (gameState !== 'playing' && gameState !== 'paused') {
+            console.log('Pause bloqueado - gameState:', gameState);
+            return;
+        }
+
         if (gameState === 'playing') {
             pause();
         } else if (gameState === 'paused') {
@@ -1064,15 +1073,24 @@ const GameFunctions = (function () {
     }
 
     function backToMenu() {
+        console.log('=== BACK TO MENU INICIADO ===');
+        console.log('gameState antes:', gameState);
+        
         // CRÍTICO: Setar gameState PRIMEIRO para parar update/draw imediatamente
         gameState = 'menu';
+        
+        console.log('gameState depois:', gameState);
 
         // Resetar lastFrameTime para evitar delta time incorreto
         lastFrameTime = 0;
 
-        // CRÍTICO: Forçar esconder pause IMEDIATAMENTE
+        // CRÍTICO: Forçar esconder pause IMEDIATAMENTE (múltiplas vezes para garantir)
         if (typeof PauseHUD !== 'undefined') {
             PauseHUD.forceHide();
+            // Chamar novamente após um pequeno delay para garantir
+            setTimeout(() => {
+                PauseHUD.forceHide();
+            }, 100);
         }
 
         // Esconder outras interfaces
@@ -1615,6 +1633,7 @@ const GameFunctions = (function () {
         asteroids,
         keys,
         getScore,  // Usar getter em vez de variável
+        getGameState: () => gameState,  // Adicionar getter para gameState
         getLives,  // Usar getter em vez de variável
         gameState
     };
