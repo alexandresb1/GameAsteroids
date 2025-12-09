@@ -517,7 +517,7 @@ const GameFunctions = (function () {
         const scaledBulletSpeed = BULLET_SPEED * scale * 0.8; // Um pouco mais lento que tiros normais
         const bulletRadius = 4 * scale;
 
-        for (let i = 0; i < 3; i++) {
+        for (let i = 0; i < 5; i++) {
             // Ângulo aleatório em qualquer direção (0 a 2π radianos)
             const randomAngle = Math.random() * Math.PI * 2;
             
