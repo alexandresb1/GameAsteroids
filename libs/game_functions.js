@@ -64,6 +64,7 @@ const GameFunctions = (function () {
         DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Tiro Duplo' },
         TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Tiro Triplo' },
         PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Tiro Perfurante' },
+        SPLASH_SHOT: { color: '#00ff88', baseSize: 25, name: 'Tiro Splash' },
         EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Vida Extra' }
     };
 
@@ -473,6 +474,22 @@ const GameFunctions = (function () {
                 });
                 break;
 
+            case 'splash':
+                // Tiro splash (verde, spawna tiros secundários ao acertar)
+                bullets.push({
+                    x: ship.x,
+                    y: ship.y,
+                    velocityX: baseVelX,
+                    velocityY: baseVelY,
+                    radius: bulletRadius,
+                    type: 'splash',
+                    color: '#00ff88',
+                    splash: true,
+                    useSprite: true,
+                    angle: ship.angle
+                });
+                break;
+
             default: // 'normal'
                 bullets.push({
                     x: ship.x,
@@ -492,6 +509,39 @@ const GameFunctions = (function () {
         if (typeof SoundEffectsManager !== 'undefined') {
             SoundEffectsManager.playShoot(currentAmmoType);
         }
+    }
+
+    function spawnSplashBullets(x, y) {
+        // Spawnar 3 tiros em direções aleatórias
+        const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale * 0.8; // Um pouco mais lento que tiros normais
+        const bulletRadius = 4 * scale;
+
+        for (let i = 0; i < 3; i++) {
+            // Ângulo aleatório em qualquer direção (0 a 2π radianos)
+            const randomAngle = Math.random() * Math.PI * 2;
+            
+            // Calcular velocidade baseada no ângulo
+            // Usar sin/cos corretamente para a direção
+            const velocityX = Math.sin(randomAngle) * scaledBulletSpeed;
+            const velocityY = -Math.cos(randomAngle) * scaledBulletSpeed;
+            
+            bullets.push({
+                x: x,
+                y: y,
+                velocityX: velocityX,
+                velocityY: velocityY,
+                radius: bulletRadius,
+                type: 'splash-secondary',
+                color: '#00ff88',
+                useSprite: true,
+                angle: randomAngle, // Ângulo para rotação do sprite
+                isSecondary: true, // Marca como secundário para não spawnar mais splash
+                splash: false // Tiros secundários não spawnam mais tiros
+            });
+        }
+
+        console.log('Splash! 3 tiros secundários spawnados em', x, y);
     }
 
     function useSpecial() {
@@ -700,6 +750,12 @@ const GameFunctions = (function () {
                 showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
                 break;
 
+            case 'SPLASH_SHOT':
+                currentAmmoType = 'splash';
+                ammoTimer = SPECIAL_AMMO_DURATION;
+                showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
+                break;
+
             case 'EXTRA_LIFE':
                 lives++;
                 showPowerupMessage(`${powerup.name}! Vidas: ${lives}`);
@@ -872,6 +928,11 @@ const GameFunctions = (function () {
                     // Reduzir vida do asteroide
                     a.currentHealth--;
                     a.hitCooldown = 0.1; // Cooldown de 0.1 segundos para evitar múltiplos hits
+
+                    // Se for splash shot, spawnar tiros secundários
+                    if (b.splash && !b.isSecondary) {
+                        spawnSplashBullets(b.x, b.y);
+                    }
 
                     // Remove tiro apenas se não for perfurante
                     if (!b.piercing) {
@@ -1403,6 +1464,10 @@ const GameFunctions = (function () {
                     break;
                 case 'PIERCING_SHOT':
                     powerupSprite = piercingShotPowerupSprite;
+                    break;
+                case 'SPLASH_SHOT':
+                    // Não tem sprite, vai usar círculo verde
+                    powerupSprite = null;
                     break;
             }
 

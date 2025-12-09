@@ -53,6 +53,10 @@ const HelpHUD = (function () {
                                     <span class="powerup-desc">Atravessa asteroides</span>
                                 </div>
                                 <div class="powerup-item">
+                                    <span class="powerup-name">Splash Shot</span>
+                                    <span class="powerup-desc">Spawna 3 tiros ao acertar</span>
+                                </div>
+                                <div class="powerup-item">
                                     <span class="powerup-name">Extra Life</span>
                                     <span class="powerup-desc">+1 vida</span>
                                 </div>
