@@ -14,8 +14,8 @@
 /* Área do Joystick */
 .joystick-area {
     position: absolute;
-    bottom: 40px;
-    left: 40px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+    left: calc(40px + env(safe-area-inset-left, 0px));
     width: 150px;
     height: 150px;
     pointer-events: all;
@@ -49,8 +49,8 @@
 /* Botão de Especial */
 .special-button {
     position: absolute;
-    bottom: 60px;
-    right: 40px;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    right: calc(40px + env(safe-area-inset-right, 0px));
     width: 100px;
     height: 100px;
     background: linear-gradient(145deg, rgba(255, 170, 0, 0.3), rgba(255, 100, 0, 0.3));

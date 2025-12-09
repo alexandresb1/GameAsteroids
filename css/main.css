@@ -8,18 +8,28 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
+    /* Usar dvh (dynamic viewport height) que considera a barra do navegador */
+    height: 100dvh;
+    /* Fallback para navegadores que não suportam dvh */
     height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
     overflow: hidden;
     flex-direction: column;
     image-rendering: pixelated;
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
+    /* Suporte para safe areas (notch, etc) */
+    padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 canvas {
     background: #000;
     width: 100vw;
+    /* Usar dvh (dynamic viewport height) que considera a barra do navegador */
+    height: 100dvh;
+    /* Fallback para navegadores que não suportam dvh */
     height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
     display: block;
     box-sizing: border-box;
 }
