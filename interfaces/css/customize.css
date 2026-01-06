@@ -52,11 +52,13 @@
 .tab-button.active {
     color: #00ffff;
     border-bottom-color: #00ffff;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
 }
 
 /* Tab Content */
 .tab-content-container {
     position: relative;
+    min-height: 300px;
 }
 
 .tab-content {
@@ -67,474 +69,211 @@
     display: block;
 }
 
-/* Seção de Naves */
-.ships-section {
-    margin-bottom: 20px;
-}
-
 .section-title {
-    color: #ffffff;
-    font-size: 0.85em;
-    margin: 0 0 15px 0;
-    text-transform: uppercase;
+    color: #00ffff;
+    font-size: 1em;
+    margin-bottom: 20px;
     letter-spacing: 2px;
 }
 
-.ships-grid {
-    display: flex;
+/* ========================================
+   COMPONENTE UNIVERSAL DE CARDS
+   ======================================== */
+
+/* Grid Universal para Cards */
+.ships-grid,
+.specials-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
     gap: 15px;
     margin-bottom: 20px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 10px;
-    scroll-behavior: smooth;
+    padding: 0 10px;
 }
 
-.ships-grid::-webkit-scrollbar {
-    height: 8px;
-}
-
-.ships-grid::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-}
-
-.ships-grid::-webkit-scrollbar-thumb {
-    background: rgba(0, 255, 255, 0.5);
-    border-radius: 4px;
-}
-
-.ships-grid::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 255, 255, 0.8);
-}
-
-/* Cards das Naves */
-.ship-card {
+/* Card Base Universal */
+.ship-card,
+.special-card {
     background: linear-gradient(145deg, #1a1a2e, #16213e);
     border: 2px solid #333;
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 15px;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
-    min-width: 140px;
-    flex-shrink: 0;
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
-.ship-card:hover {
+.ship-card:hover,
+.special-card:hover {
+    border-color: #555;
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 255, 255, 0.3);
 }
 
-/* Nave clicada para ver informações - Glow Azul */
-.ship-card.viewing {
+/* Estados Universais dos Cards */
+
+/* Card clicado para ver informações - Glow Azul */
+.ship-card.viewing,
+.special-card.viewing {
+    border-color: #00ffff;
     border-color: #00ffff;
     background: linear-gradient(145deg, #0a2a3a, #0f3f4f);
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.6);
 }
 
-/* Nave selecionada para jogar - Glow Verde */
-.ship-card.selected {
+/* Card selecionado para usar - Glow Verde */
+.ship-card.selected,
+.special-card.selected {
     border-color: #00ff00;
     background: linear-gradient(145deg, #0a3a0a, #0f4f0f);
-    box-shadow: 0 0 25px rgba(0, 255, 0, 0.7);
+    box-shadow: 0 0 25px rgba(0, 255, 0, 0.6);
 }
 
-/* Quando a nave está selecionada E sendo visualizada */
-.ship-card.selected.viewing {
+/* Quando o card está selecionado E sendo visualizado */
+.ship-card.selected.viewing,
+.special-card.selected.viewing {
     border-color: #00ff00;
     box-shadow: 0 0 30px rgba(0, 255, 0, 0.8), 0 0 15px rgba(0, 255, 255, 0.4);
 }
 
-.ship-card.locked {
+/* Cards bloqueados */
+.ship-card.locked,
+.special-card.locked {
+    border-color: #444;
     opacity: 0.6;
     cursor: pointer;
 }
 
-.ship-card.locked:hover {
+.ship-card.locked:hover,
+.special-card.locked:hover {
+    border-color: #666;
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(255, 100, 100, 0.3);
 }
 
-.ship-preview {
-    width: 80px;
-    height: 80px;
-    margin: 0 auto 10px;
+/* ========================================
+   PREVIEW UNIVERSAL (SPRITE/ÍCONE)
+   ======================================== */
+
+/* Container do Preview Universal */
+.ship-preview,
+.special-preview {
     display: flex;
-    align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
+    align-items: center;
+    margin-bottom: 12px;
+    height: 80px;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
     border-radius: 50%;
-    border: 1px solid #444;
+    position: relative;
 }
 
+/* Imagem da Nave */
 .ship-image {
-    width: 60px;
-    height: 60px;
+    max-width: 60px;
+    max-height: 60px;
     object-fit: contain;
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    transition: all 0.3s ease;
+}
+
+.ship-card:hover .ship-image {
+    filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.6));
+    transform: scale(1.1);
 }
 
 .ship-card.locked .ship-image {
     filter: grayscale(100%) brightness(0.5);
 }
 
-.ship-name {
-    color: #ffffff;
-    font-size: 0.7em;
-    margin-bottom: 8px;
-    font-weight: bold;
-}
-
-.ship-status {
-    font-size: 0.6em;
-    padding: 4px 8px;
-    border-radius: 4px;
-    text-transform: uppercase;
-    font-weight: bold;
-}
-
-.ship-status.unlocked {
-    background: rgba(0, 255, 0, 0.2);
-    color: #00ff00;
-    border: 1px solid #00ff00;
-}
-
-.ship-status.locked {
-    background: rgba(255, 0, 0, 0.2);
-    color: #ff6666;
-    border: 1px solid #ff6666;
-}
-
-/* Informações do Jogador */
-.player-info {
-    background: rgba(0, 0, 0, 0.5);
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 15px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-around;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.player-info .label {
-    color: #cccccc;
-    font-size: 0.75em;
-}
-
-.player-info .value {
-    color: #00ffff;
-    font-size: 0.85em;
-    font-weight: bold;
-    margin-left: 10px;
-}
-
-/* Botões */
-.customize-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-}
-
-.customize-button {
-    background: linear-gradient(45deg, #1a1a2e, #16213e);
-    border: 2px solid #00ffff;
-    color: white;
-    padding: 12px 25px;
-    font-size: 0.8em;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-}
-
-.customize-button:hover {
-    background: linear-gradient(45deg, #00ffff, #0066cc);
-    color: #000;
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
-}
-
-.back-button:hover {
-    background: linear-gradient(45deg, #ff6600, #cc4400);
-}
-
-/* Tooltip - Sempre visível e responsivo */
-.ship-tooltip {
-    background: rgba(0, 50, 50, 0.95);
-    border: 2px solid #00ffff;
-    border-radius: 12px;
-    padding: 15px;
-    color: white;
-    font-size: 0.75em;
-    text-align: left;
-    margin: 15px 0;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    opacity: 1;
-    transition: all 0.3s ease;
-    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.3);
-}
-
-.tooltip-content {
-    line-height: 1.6;
-    width: 100%;
-}
-
-/* Estilos para os elementos do tooltip */
-.tooltip-ship-name {
-    font-size: 1.1em;
-    font-weight: bold;
-    color: #00ffff;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-.tooltip-description {
-    font-size: 0.9em;
-    color: #e0e0e0;
-    margin-bottom: 10px;
-    line-height: 1.5;
-}
-
-.tooltip-attributes {
-    margin-bottom: 10px;
-    line-height: 1.8;
-}
-
-.tooltip-status {
-    font-size: 0.85em;
-    font-weight: bold;
-    padding: 10px;
-    border-radius: 6px;
-    display: block;
-    text-align: center;
-    margin-top: 15px;
-}
-
-.tooltip-status.available {
-    background: transparent;
-    border: none;
-    padding: 0;
-}
-
-.tooltip-status.locked {
-    background: rgba(255, 100, 100, 0.2);
-    color: #ff6666;
-    border: 1px solid #ff6666;
-}
-
-/* Botão de Seleção - Centralizado */
-.select-ship-btn {
-    background: linear-gradient(45deg, #00cc00, #00ff00);
-    border: 2px solid #00ff00;
-    color: #000;
-    padding: 10px 30px;
-    font-size: 0.75em;
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: bold;
-    font-family: 'Press Start 2P', cursive;
-    display: block;
-    width: 100%;
-    max-width: 250px;
-    margin: 15px auto 0;
-}
-
-.select-ship-btn:hover {
-    background: linear-gradient(45deg, #00ff00, #66ff66);
-    transform: scale(1.05);
-    box-shadow: 0 0 20px rgba(0, 255, 0, 0.8);
-}
-
-.tooltip-default {
-    text-align: center;
-    opacity: 0.8;
-}
-
-.tooltip-default .tooltip-ship-name {
-    color: #cccccc;
-    margin-bottom: 8px;
-}
-
-.tooltip-default .tooltip-description {
-    color: #999999;
-    font-style: italic;
-}
-
-/* Animações */
-@keyframes customizeSlideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-50px) scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-.customize-container {
-    animation: customizeSlideIn 0.4s ease-out;
-}
-
-/* Responsividade */
-@media (max-width: 600px) {
-    .customize-container {
-        padding: 15px;
-        margin: 10px;
-    }
-
-    .customize-title {
-        font-size: 1.2em;
-    }
-
-    .player-info {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .customize-buttons {
-        flex-direction: column;
-    }
-
-    .tooltip-ship-name {
-        font-size: 1em;
-    }
-
-    .tooltip-description {
-        font-size: 0.85em;
-    }
-}
-
-
-/* Responsividade Mobile - Apenas Scroll */
-@media (max-width: 768px), (max-height: 700px) {
-    .customize-container {
-        max-height: 85vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-}
-
-/* Scroll suave e estilizado */
-.customize-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-.customize-container::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 4px;
-}
-
-.customize-container::-webkit-scrollbar-thumb {
-    background: rgba(0, 255, 255, 0.5);
-    border-radius: 4px;
-}
-
-.customize-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 255, 255, 0.8);
-}
-/* Especiais Grid */
-.specials-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-    padding: 0 10px;
-}
-
-.special-card {
-    background: rgba(20, 20, 40, 0.8);
-    border: 2px solid rgba(0, 255, 255, 0.3);
-    border-radius: 10px;
-    padding: 15px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    min-height: 140px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-}
-
-.special-card:hover {
-    border-color: #00ffff;
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
-    transform: translateY(-2px);
-}
-
-.special-card.viewing {
-    border-color: #ffff00;
-    box-shadow: 0 0 20px rgba(255, 255, 0, 0.4);
-    background: rgba(40, 40, 20, 0.9);
-}
-
-.special-card.selected {
-    border-color: #00ff00;
-    box-shadow: 0 0 25px rgba(0, 255, 0, 0.6);
-    background: rgba(20, 40, 20, 0.9);
-}
-
-.special-card.locked {
-    opacity: 0.5;
-    border-color: rgba(255, 100, 100, 0.3);
-}
-
-.special-card.locked:hover {
-    border-color: rgba(255, 100, 100, 0.6);
-    box-shadow: 0 0 15px rgba(255, 100, 100, 0.3);
-}
-
-.special-preview {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 10px;
-    height: 60px;
-}
-
+/* Ícone do Especial */
 .special-icon {
     font-size: 2.5em;
-    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.3));
+    filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+    transition: all 0.3s ease;
 }
 
+.special-card:hover .special-icon {
+    filter: drop-shadow(0 0 12px rgba(0, 255, 255, 0.6));
+    transform: scale(1.1);
+}
+
+.special-card.locked .special-icon {
+    filter: grayscale(100%) brightness(0.5);
+}
+
+/* ========================================
+   TEXTO UNIVERSAL DOS CARDS
+   ======================================== */
+
+/* Nome Universal */
+.ship-name,
 .special-name {
     color: #00ffff;
-    font-size: 0.6em;
+    font-size: 0.65em;
     margin-bottom: 8px;
     text-align: center;
     letter-spacing: 1px;
     line-height: 1.2;
+    min-height: 2.4em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
+/* Status Universal */
+.ship-status,
 .special-status {
     font-size: 0.5em;
     text-align: center;
-    padding: 3px 6px;
-    border-radius: 3px;
+    padding: 4px 8px;
+    border-radius: 4px;
     letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
+.ship-status.unlocked,
 .special-status.unlocked {
     color: #00ff00;
     background: rgba(0, 255, 0, 0.1);
+    border: 1px solid rgba(0, 255, 0, 0.3);
 }
 
+.ship-status.locked,
 .special-status.locked {
     color: #ff6666;
     background: rgba(255, 100, 100, 0.1);
+    border: 1px solid rgba(255, 100, 100, 0.3);
 }
 
-/* Tooltip para especiais */
+/* ========================================
+   TOOLTIP UNIVERSAL
+   ======================================== */
+
+.ship-tooltip {
+    position: relative;
+    width: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid #00ffff;
+    border-radius: 10px;
+    padding: 20px;
+    color: white;
+    font-size: 0.7em;
+    line-height: 1.4;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+    margin: 20px 0;
+    min-height: 200px;
+}
+
+.tooltip-content {
+    text-align: left;
+}
+
+/* Nomes no Tooltip */
+.tooltip-ship-name,
 .tooltip-special-name {
     color: #00ffff;
     font-size: 1.1em;
@@ -543,13 +282,50 @@
     letter-spacing: 2px;
 }
 
+.tooltip-description {
+    color: #ccc;
+    margin-bottom: 15px;
+    line-height: 1.5;
+    text-align: justify;
+}
+
+.tooltip-attributes {
+    margin: 10px 0;
+    color: #fff;
+}
+
+.tooltip-attributes > div {
+    margin: 5px 0;
+    font-size: 0.9em;
+}
+
 .tooltip-cooldown {
     color: #ffaa00;
-    font-size: 0.8em;
+    font-size: 0.9em;
     margin: 8px 0;
     text-align: center;
 }
 
+.tooltip-unlock-info {
+    margin-top: 10px;
+    padding: 8px;
+    background: rgba(255, 100, 100, 0.1);
+    border-radius: 5px;
+    border-left: 3px solid #ff6666;
+}
+
+.tooltip-status {
+    text-align: center;
+    margin-top: 15px;
+}
+
+.tooltip-status.locked {
+    color: #ff6666;
+    font-weight: bold;
+}
+
+/* Botões de Seleção Universais */
+.select-ship-btn,
 .select-special-btn {
     background: linear-gradient(45deg, #00ff00, #00cc00);
     border: none;
@@ -557,23 +333,28 @@
     padding: 8px 16px;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 0.7em;
+    font-size: 0.8em;
     font-weight: bold;
     letter-spacing: 1px;
     transition: all 0.2s ease;
     margin-top: 10px;
 }
 
+.select-ship-btn:hover,
 .select-special-btn:hover {
     background: linear-gradient(45deg, #00cc00, #009900);
     transform: scale(1.05);
 }
 
+.select-ship-btn:active,
 .select-special-btn:active {
     transform: scale(0.95);
 }
 
-/* Atualizar player-info para 4 itens */
+/* ========================================
+   INFORMAÇÕES DO JOGADOR
+   ======================================== */
+
 .player-info {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -604,27 +385,102 @@
     font-weight: bold;
 }
 
-/* Responsividade para especiais */
-@media (max-width: 600px) {
+/* ========================================
+   BOTÕES
+   ======================================== */
+
+.customize-buttons {
+    margin-top: 20px;
+}
+
+.customize-button {
+    background: linear-gradient(45deg, #1a1a2e, #16213e);
+    border: 2px solid #00ffff;
+    color: #00ffff;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.7em;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+    margin: 0 10px;
+}
+
+.customize-button:hover {
+    background: linear-gradient(45deg, #00ffff, #0099cc);
+    color: #000;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 255, 255, 0.4);
+}
+
+/* ========================================
+   RESPONSIVIDADE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .customize-container {
+        padding: 15px;
+        max-height: 95vh;
+    }
+    
+    .ships-grid,
     .specials-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 10px;
     }
     
+    .ship-card,
     .special-card {
-        min-height: 120px;
-        padding: 10px;
+        min-height: 140px;
+        padding: 12px;
+    }
+    
+    .ship-preview,
+    .special-preview {
+        height: 60px;
+    }
+    
+    .ship-image {
+        max-width: 45px;
+        max-height: 45px;
     }
     
     .special-icon {
         font-size: 2em;
     }
     
+    .ship-name,
     .special-name {
-        font-size: 0.5em;
+        font-size: 0.55em;
     }
     
+    .ship-status,
     .special-status {
         font-size: 0.45em;
+    }
+    
+    .ship-tooltip {
+        margin: 15px 0;
+        padding: 15px;
+        min-height: 150px;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .player-info {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ships-grid,
+    .specials-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tab-button {
+        padding: 8px 12px;
+        font-size: 0.7em;
     }
 }
