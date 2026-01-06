@@ -113,7 +113,7 @@ const GameData = (function () {
             icon: '💥',
             unlockType: 'totalScore',
             unlockRequirement: 1000,
-            cooldown: 8.0, // segundos
+            cooldown: 3.0, // segundos
             color: '#ff6600'
         }
     };

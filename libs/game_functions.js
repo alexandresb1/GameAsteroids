@@ -100,7 +100,7 @@ const GameFunctions = (function () {
     // SISTEMA DE ESPECIAL (SHOCKWAVE)
     let specialCooldown = 0; // Tempo restante para usar especial (0 = disponível)
     const SPECIAL_COOLDOWN_TIME = 5.0; // 5 segundos para recarregar
-    const SHOCKWAVE_BULLETS = 16; // Número de tiros na onda
+    const SHOCKWAVE_BULLETS = 48; // Número de tiros na onda
     
     // SISTEMA DE ESPECIAIS DESBLOQUEÁVEIS
     let currentSpecialType = 'shockwave'; // Tipo atual do especial
