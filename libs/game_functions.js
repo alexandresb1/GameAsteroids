@@ -101,6 +101,10 @@ const GameFunctions = (function () {
     let specialCooldown = 0; // Tempo restante para usar especial (0 = disponível)
     const SPECIAL_COOLDOWN_TIME = 5.0; // 5 segundos para recarregar
     const SHOCKWAVE_BULLETS = 16; // Número de tiros na onda
+    
+    // SISTEMA DE ESPECIAIS DESBLOQUEÁVEIS
+    let currentSpecialType = 'shockwave'; // Tipo atual do especial
+    let currentSpecialCooldown = SPECIAL_COOLDOWN_TIME; // Cooldown atual baseado no especial selecionado
     // FIM: VARIÁVEIS GLOBAIS DO JOGO.
 
     // INÍCIO: IMPORTAÇÃO DOS SPRITES.
@@ -120,9 +124,28 @@ const GameFunctions = (function () {
         hitsRemaining = currentShipAttributes.resistance; // Reset hits
     }
 
+    // Função para carregar especial selecionado
+    function loadSelectedSpecial() {
+        const selectedSpecialId = ProgressionSystem.getSelectedSpecial();
+        if (selectedSpecialId === 0) {
+            currentSpecialType = 'shockwave'; // Especial padrão
+            currentSpecialCooldown = SPECIAL_COOLDOWN_TIME;
+        } else {
+            const special = GameData.getSpecialById(selectedSpecialId);
+            if (special) {
+                currentSpecialType = special.name.toLowerCase().replace(' ', '_'); // 'big_shot'
+                currentSpecialCooldown = special.cooldown;
+            } else {
+                currentSpecialType = 'shockwave';
+                currentSpecialCooldown = SPECIAL_COOLDOWN_TIME;
+            }
+        }
+    }
+
     // Carregar sprite e atributos iniciais
     loadSelectedShipSprite();
     loadSelectedShipAttributes();
+    loadSelectedSpecial();
 
     // SPRITES DOS ASTEROIDES
     const asteroidSprites = [
@@ -548,9 +571,21 @@ const GameFunctions = (function () {
     }
 
     function useSpecial() {
-        // Ativar cooldown
-        specialCooldown = SPECIAL_COOLDOWN_TIME;
+        // Ativar cooldown baseado no especial atual
+        specialCooldown = currentSpecialCooldown;
 
+        switch (currentSpecialType) {
+            case 'big_shot':
+                useBigShot();
+                break;
+            case 'shockwave':
+            default:
+                useShockwave();
+                break;
+        }
+    }
+
+    function useShockwave() {
         // Criar shockwave - onda de tiros em todas as direções
         const angleStep = (Math.PI * 2) / SHOCKWAVE_BULLETS; // Dividir 360° pelos tiros
         const scale = getGameScale();
@@ -578,7 +613,36 @@ const GameFunctions = (function () {
             SoundEffectsManager.playShoot('shockwave');
         }
 
-        console.log('ESPECIAL: Shockwave ativado!'); // Feedback temporário
+        console.log('ESPECIAL: Shockwave ativado!');
+    }
+
+    function useBigShot() {
+        // Criar BIG SHOT - bala gigante que mata qualquer asteroide
+        const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale * 0.8; // Um pouco mais lento
+        const bigBulletRadius = 25 * scale; // 10x maior que bala normal
+        
+        const baseVelX = Math.sin(ship.angle) * scaledBulletSpeed;
+        const baseVelY = -Math.cos(ship.angle) * scaledBulletSpeed;
+
+        bullets.push({
+            x: ship.x,
+            y: ship.y,
+            velocityX: baseVelX,
+            velocityY: baseVelY,
+            radius: bigBulletRadius,
+            type: 'big_shot',
+            color: '#ff6600', // Laranja forte
+            oneHitKill: true, // Mata qualquer asteroide em 1 hit
+            useSprite: false // Usar círculo para destacar o tamanho
+        });
+
+        // Tocar som especial
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playShoot('big_shot');
+        }
+
+        console.log('ESPECIAL: Big Shot ativado!');
     }
 
     function SpawnAsteroid() {
@@ -928,8 +992,15 @@ const GameFunctions = (function () {
                 const dy = a.y - b.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if (distance < a.radius + b.radius && a.hitCooldown <= 0) {
-                    // Reduzir vida do asteroide
-                    a.currentHealth--;
+                    // Verificar se é um tiro que mata em 1 hit
+                    if (b.oneHitKill) {
+                        // Big Shot mata instantaneamente
+                        a.currentHealth = 0;
+                    } else {
+                        // Reduzir vida do asteroide normalmente
+                        a.currentHealth--;
+                    }
+                    
                     a.hitCooldown = 0.1; // Cooldown de 0.1 segundos para evitar múltiplos hits
 
                     // Se for splash shot, spawnar tiros secundários
@@ -1074,6 +1145,7 @@ const GameFunctions = (function () {
         // Recarregar sprite e atributos da nave selecionada
         loadSelectedShipSprite();
         loadSelectedShipAttributes();
+        loadSelectedSpecial();
         resetGame();
         // Mostrar botão de pause quando jogo inicia
         if (typeof AudioUI !== 'undefined') {
@@ -1090,6 +1162,7 @@ const GameFunctions = (function () {
         // Recarregar sprite e atributos da nave selecionada
         loadSelectedShipSprite();
         loadSelectedShipAttributes();
+        loadSelectedSpecial();
         resetGame();
         // Mostrar botão de pause quando jogo reinicia
         if (typeof AudioUI !== 'undefined') {

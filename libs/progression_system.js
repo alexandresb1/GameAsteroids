@@ -6,7 +6,9 @@ const ProgressionSystem = (function () {
         TOTAL_SCORE: 'asteroids_total_score',
         PLAY_TIME: 'asteroids_play_time',
         SELECTED_SHIP: 'asteroids_selected_ship',
-        UNLOCKED_SHIPS: 'asteroids_unlocked_ships'
+        UNLOCKED_SHIPS: 'asteroids_unlocked_ships',
+        SELECTED_SPECIAL: 'asteroids_selected_special',
+        UNLOCKED_SPECIALS: 'asteroids_unlocked_specials'
     };
 
     // Acumulador de tempo da sessão atual (em segundos)
@@ -17,6 +19,7 @@ const ProgressionSystem = (function () {
 
     // Configurações de desbloqueio (agora vem do GameData)
     const UNLOCK_REQUIREMENTS = {};
+    const SPECIAL_UNLOCK_REQUIREMENTS = {};
 
     // Inicializar requirements do GameData quando disponível
     function initUnlockRequirements() {
@@ -26,6 +29,14 @@ const ProgressionSystem = (function () {
                 UNLOCK_REQUIREMENTS[ship.id] = {
                     type: ship.unlockType,
                     value: ship.unlockRequirement
+                };
+            });
+
+            const specials = GameData.getAllSpecials();
+            specials.forEach(special => {
+                SPECIAL_UNLOCK_REQUIREMENTS[special.id] = {
+                    type: special.unlockType,
+                    value: special.unlockRequirement
                 };
             });
         }
@@ -56,8 +67,14 @@ const ProgressionSystem = (function () {
             setSelectedShip(1);
         }
 
+        // Se não há especial selecionado, definir como 0 (nenhum)
+        if (localStorage.getItem(STORAGE_KEYS.SELECTED_SPECIAL) === null) {
+            setSelectedSpecial(0);
+        }
+
         // Atualizar naves desbloqueadas baseado nas stats atuais
         updateUnlockedShips();
+        updateUnlockedSpecials();
     }
 
     // Gerenciar melhor pontuação
@@ -68,6 +85,7 @@ const ProgressionSystem = (function () {
     function setBestScore(score) {
         localStorage.setItem(STORAGE_KEYS.BEST_SCORE, score.toString());
         updateUnlockedShips();
+        updateUnlockedSpecials();
     }
 
     function updateScore(newScore) {
@@ -94,6 +112,7 @@ const ProgressionSystem = (function () {
     function setTotalScore(score) {
         localStorage.setItem(STORAGE_KEYS.TOTAL_SCORE, score.toString());
         updateUnlockedShips();
+        updateUnlockedSpecials();
     }
 
     function addToTotalScore(points) {
@@ -113,6 +132,7 @@ const ProgressionSystem = (function () {
         // Salvar apenas segundos inteiros
         localStorage.setItem(STORAGE_KEYS.PLAY_TIME, Math.floor(seconds).toString());
         updateUnlockedShips();
+        updateUnlockedSpecials();
     }
 
     function addPlayTime(deltaSeconds) {
@@ -148,7 +168,55 @@ const ProgressionSystem = (function () {
         window.location.reload();
     }
 
-    // Gerenciar nave selecionada
+    // Gerenciar especial selecionado
+    function getSelectedSpecial() {
+        return parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_SPECIAL)) || 0; // 0 = nenhum especial
+    }
+
+    function setSelectedSpecial(specialId) {
+        // Verificar se o especial está desbloqueado (0 = nenhum especial sempre permitido)
+        if (specialId === 0 || isSpecialUnlocked(specialId)) {
+            localStorage.setItem(STORAGE_KEYS.SELECTED_SPECIAL, specialId.toString());
+            return true;
+        }
+        return false;
+    }
+
+    // Gerenciar especiais desbloqueados
+    function getUnlockedSpecials() {
+        const stored = localStorage.getItem(STORAGE_KEYS.UNLOCKED_SPECIALS);
+        return stored ? JSON.parse(stored) : []; // Nenhum especial desbloqueado por padrão
+    }
+
+    function setUnlockedSpecials(specials) {
+        localStorage.setItem(STORAGE_KEYS.UNLOCKED_SPECIALS, JSON.stringify(specials));
+    }
+
+    function updateUnlockedSpecials() {
+        const unlocked = [];
+        const bestScore = getBestScore();
+        const totalScore = getTotalScore();
+        const playTime = getPlayTime();
+
+        for (const [specialId, requirement] of Object.entries(SPECIAL_UNLOCK_REQUIREMENTS)) {
+            if (checkUnlockRequirement(requirement, bestScore, totalScore, playTime)) {
+                unlocked.push(parseInt(specialId));
+            }
+        }
+
+        setUnlockedSpecials(unlocked);
+    }
+
+    function isSpecialUnlocked(specialId) {
+        const requirement = SPECIAL_UNLOCK_REQUIREMENTS[specialId];
+        if (!requirement) return false;
+
+        const bestScore = getBestScore();
+        const totalScore = getTotalScore();
+        const playTime = getPlayTime();
+
+        return checkUnlockRequirement(requirement, bestScore, totalScore, playTime);
+    }
     function getSelectedShip() {
         return parseInt(localStorage.getItem(STORAGE_KEYS.SELECTED_SHIP)) || 1;
     }
@@ -324,20 +392,25 @@ const ProgressionSystem = (function () {
             selectedShip: getSelectedShip(),
             unlockedShips: getUnlockedShips(),
             totalShips: Object.keys(UNLOCK_REQUIREMENTS).length,
-            nextUnlock: getNextUnlock()
+            nextUnlock: getNextUnlock(),
+            selectedSpecial: getSelectedSpecial(),
+            unlockedSpecials: getUnlockedSpecials(),
+            totalSpecials: Object.keys(SPECIAL_UNLOCK_REQUIREMENTS).length
         };
     }
 
     // Exportar dados para JSON
     function exportData() {
         const data = {
-            version: 2,
+            version: 3,
             timestamp: Date.now(),
             bestScore: getBestScore(),
             totalScore: getTotalScore(),
             playTime: getPlayTime(),
             selectedShip: getSelectedShip(),
-            unlockedShips: getUnlockedShips()
+            unlockedShips: getUnlockedShips(),
+            selectedSpecial: getSelectedSpecial(),
+            unlockedSpecials: getUnlockedSpecials()
         };
         return JSON.stringify(data, null, 2);
     }
@@ -358,6 +431,8 @@ const ProgressionSystem = (function () {
             if (typeof data.playTime === 'number') setPlayTime(data.playTime);
             if (typeof data.selectedShip === 'number') setSelectedShip(data.selectedShip);
             if (Array.isArray(data.unlockedShips)) setUnlockedShips(data.unlockedShips);
+            if (typeof data.selectedSpecial === 'number') setSelectedSpecial(data.selectedSpecial);
+            if (Array.isArray(data.unlockedSpecials)) setUnlockedSpecials(data.unlockedSpecials);
 
             // Recarregar dados internos
             initializeData();
@@ -412,6 +487,12 @@ const ProgressionSystem = (function () {
         getSelectedShipSprite,
         isShipUnlocked,
         getUnlockedShips,
+
+        // Especiais
+        getSelectedSpecial,
+        setSelectedSpecial,
+        isSpecialUnlocked,
+        getUnlockedSpecials,
 
         // Informações
         getProgressInfo,

@@ -104,13 +104,40 @@ const GameData = (function () {
         return Object.values(SHIPS).filter(ship => ship.unlockType === unlockType);
     }
 
+    // Definição de especiais com requisitos de desbloqueio
+    const SPECIALS = {
+        1: {
+            id: 1,
+            name: 'BIG SHOT',
+            description: 'Dispara uma bala gigante que destrói qualquer asteroide em um único hit, independente da vida dele.',
+            icon: '💥',
+            unlockType: 'totalScore',
+            unlockRequirement: 1000,
+            cooldown: 8.0, // segundos
+            color: '#ff6600'
+        }
+    };
+
+    // Obter todos os especiais
+    function getAllSpecials() {
+        return Object.values(SPECIALS);
+    }
+
+    // Obter especial por ID
+    function getSpecialById(id) {
+        return SPECIALS[id];
+    }
+
     return {
         SHIPS,
+        SPECIALS,
         UNLOCK_TYPES,
         UNLOCK_TYPE_LABELS,
         getAllShips,
         getShipById,
         getShipsByUnlockType,
+        getAllSpecials,
+        getSpecialById,
         formatUnlockRequirement
     };
 })();
