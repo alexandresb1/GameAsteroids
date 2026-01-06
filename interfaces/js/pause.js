@@ -16,6 +16,10 @@ const PauseHUD = (function () {
                 ▶️ Continuar
             </button>
             
+            <button id="toggleAudioBtn" class="pause-button audio-button">
+                🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>
+            </button>
+            
             <button id="endGameBtn" class="pause-button end-button">
                 🏁 Finalizar Jogo
             </button>
@@ -73,8 +77,30 @@ const PauseHUD = (function () {
 
             // Configurar eventos dos botões usando jQuery
             $('#resumeGameBtn').on('click', function () {
-                hide();
-                GameFunctions.resume();
+                // Verificar se realmente está pausado antes de resumir
+                if (typeof GameFunctions !== 'undefined' && GameFunctions.getGameState() === 'paused') {
+                    hide();
+                    GameFunctions.resume();
+                } else {
+                    console.warn('Tentativa de resumir quando não está pausado');
+                    forceHide();
+                }
+            });
+
+            $('#toggleAudioBtn').on('click', function () {
+                if (typeof AudioManager !== 'undefined') {
+                    const isMuted = AudioManager.toggleMute();
+                    const $status = $('#pauseAudioStatus');
+                    const $btn = $(this);
+                    
+                    if (isMuted) {
+                        $status.text('DESATIVADA');
+                        $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
+                    } else {
+                        $status.text('ATIVADA');
+                        $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
+                    }
+                }
             });
 
             $('#endGameBtn').on('click', function () {
@@ -82,11 +108,18 @@ const PauseHUD = (function () {
             });
 
             $('#backToMenuBtn').on('click', function () {
+                console.log('=== VOLTAR AO MENU CLICADO ===');
+                
                 // Esconder LOCALMENTE primeiro para garantir feedback visual imediato
                 forceHide();
 
-                // Depois chamar a função do jogo que vai limpar tudo
-                GameFunctions.backToMenu();
+                // Pequeno delay para garantir que o forceHide foi aplicado
+                setTimeout(() => {
+                    // Depois chamar a função do jogo que vai limpar tudo
+                    if (typeof GameFunctions !== 'undefined') {
+                        GameFunctions.backToMenu();
+                    }
+                }, 50);
             });
 
             // Eventos do popup de confirmação
@@ -108,14 +141,36 @@ const PauseHUD = (function () {
         loadHTML();
 
         const $overlay = $('#pauseOverlay');
+        const $popup = $('#endGameConfirm');
+        
         if ($overlay.length) {
-            // CRÍTICO: Remover style inline que foi forçado pelo forceHide
-            $overlay.removeAttr('style');
+            // CRÍTICO: Limpar TODOS os estilos inline forçados
+            $overlay[0].removeAttribute('style');
+            
+            // Garantir que o popup está escondido
+            if ($popup.length) {
+                $popup.css('display', 'none');
+            }
 
             $overlay.css({
                 display: 'flex',
                 opacity: 0
             });
+            
+            // Atualizar estado do botão de áudio
+            if (typeof AudioManager !== 'undefined') {
+                const isMuted = AudioManager.getMutedState();
+                const $status = $('#pauseAudioStatus');
+                const $btn = $('#toggleAudioBtn');
+                
+                if (isMuted) {
+                    $status.text('DESATIVADA');
+                    $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
+                } else {
+                    $status.text('ATIVADA');
+                    $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
+                }
+            }
 
             // Animação de entrada usando jQuery
             setTimeout(() => {
@@ -124,6 +179,8 @@ const PauseHUD = (function () {
                     opacity: 1
                 });
             }, 10);
+            
+            console.log('PauseHUD show executado');
         }
     }
 
@@ -143,21 +200,48 @@ const PauseHUD = (function () {
 
     function forceHide() {
         const $overlay = $('#pauseOverlay');
+        const $popup = $('#endGameConfirm');
+        
         if ($overlay.length) {
             // Abordagem NUCLEAR: Forçar style inline com !important
             // Usando setProperty para garantir !important
             $overlay[0].style.setProperty('display', 'none', 'important');
             $overlay[0].style.setProperty('opacity', '0', 'important');
             $overlay[0].style.setProperty('pointer-events', 'none', 'important');
+            $overlay[0].style.setProperty('visibility', 'hidden', 'important');
 
             // Garantir que não há listeners de eventos ativos
             $overlay.off('transitionend');
+            
+            // Remover qualquer animação pendente
+            $overlay.stop(true, true);
         }
+        
+        // Esconder popup de confirmação também
+        if ($popup.length) {
+            $popup[0].style.setProperty('display', 'none', 'important');
+            $popup[0].style.setProperty('opacity', '0', 'important');
+            $popup[0].style.setProperty('pointer-events', 'none', 'important');
+            $popup[0].style.setProperty('visibility', 'hidden', 'important');
+        }
+        
+        console.log('PauseHUD forceHide executado');
     }
 
     function isVisible() {
         const $overlay = $('#pauseOverlay');
-        return $overlay.length && $overlay.css('display') !== 'none';
+        if (!$overlay.length) return false;
+        
+        // Verificar múltiplas condições para garantir que está realmente visível
+        const display = $overlay.css('display');
+        const visibility = $overlay.css('visibility');
+        const opacity = parseFloat($overlay.css('opacity'));
+        
+        const visible = display !== 'none' && visibility !== 'hidden' && opacity > 0;
+        
+        console.log('PauseHUD.isVisible:', visible, { display, visibility, opacity });
+        
+        return visible;
     }
 
     function showEndGameConfirm() {

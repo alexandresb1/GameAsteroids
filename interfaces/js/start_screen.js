@@ -35,6 +35,15 @@ const StartScreenHUD = (function () {
                 <span class="button-text">CONFIGURAÇÕES</span>
             </button>
         </div>
+
+        <!-- Toggle Modo Mobile -->
+        <div class="mobile-mode-toggle">
+            <label class="toggle-container">
+                <input type="checkbox" id="mainMenuMobileToggle">
+                <span class="toggle-slider-main"></span>
+            </label>
+            <span id="mainMenuMobileStatus" class="toggle-label-main">📱 MODO MOBILE</span>
+        </div>
     </div>
 </div>`;
 
@@ -75,6 +84,30 @@ const StartScreenHUD = (function () {
                 }
             });
 
+            // Toggle Modo Mobile no menu principal
+            const $mainMobileToggle = $('#mainMenuMobileToggle');
+            const $mainMobileStatus = $('#mainMenuMobileStatus');
+            
+            // Carregar estado atual
+            if (typeof ProgressionSystem !== 'undefined') {
+                const isMobile = ProgressionSystem.isMobileMode();
+                $mainMobileToggle.prop('checked', isMobile);
+                updateMobileToggleLabel(isMobile);
+            }
+            
+            $mainMobileToggle.on('change', function () {
+                const enabled = $(this).is(':checked');
+                if (typeof ProgressionSystem !== 'undefined') {
+                    ProgressionSystem.setMobileMode(enabled);
+                    updateMobileToggleLabel(enabled);
+                }
+            });
+
+            function updateMobileToggleLabel(enabled) {
+                $mainMobileStatus.text(enabled ? '📱 MODO MOBILE: ON' : '📱 MODO MOBILE: OFF');
+                $mainMobileStatus.css('color', enabled ? '#00ff00' : '#00ffff');
+            }
+
             isLoaded = true;
         } catch (error) {
             console.error('Erro ao carregar tela inicial:', error);
@@ -86,6 +119,15 @@ const StartScreenHUD = (function () {
 
         const overlay = $('#startScreenOverlay');
         overlay.css({ display: 'flex', opacity: 0 });
+
+        // Atualizar estado do toggle mobile
+        if (typeof ProgressionSystem !== 'undefined') {
+            const isMobile = ProgressionSystem.isMobileMode();
+            $('#mainMenuMobileToggle').prop('checked', isMobile);
+            const $status = $('#mainMenuMobileStatus');
+            $status.text(isMobile ? '📱 MODO MOBILE: ON' : '📱 MODO MOBILE: OFF');
+            $status.css('color', isMobile ? '#00ff00' : '#00ffff');
+        }
 
         // Tentar tocar música do menu (será controlado pelo AudioManager)
         AudioManager.playMenuMusic();

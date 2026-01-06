@@ -24,6 +24,27 @@ canvas {
     box-sizing: border-box;
 }
 
+/* Ajustes de viewport apenas para mobile */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    body {
+        /* Usar dvh (dynamic viewport height) que considera a barra do navegador */
+        height: 100dvh;
+        /* Fallback para navegadores que não suportam dvh */
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+        /* Suporte para safe areas (notch, etc) - apenas mobile */
+        padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+    }
+
+    canvas {
+        /* Usar dvh (dynamic viewport height) que considera a barra do navegador */
+        height: 100dvh;
+        /* Fallback para navegadores que não suportam dvh */
+        height: 100vh;
+        height: calc(var(--vh, 1vh) * 100);
+    }
+}
+
 #hud {
     width: 100vw;
     color: white;
@@ -44,6 +65,16 @@ canvas {
     align-items: center;
     z-index: 1000;
     color: white;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Ajuste para mobile - permitir scroll */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
+    .interface-overlay {
+        align-items: flex-start;
+        padding: 20px 0;
+    }
 }
 
 /* Botões do HUD (Audio/Pause) - Estilo unificado com Menu */
