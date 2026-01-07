@@ -61,11 +61,11 @@ const GameFunctions = (function () {
 
     // Tipos de powerups (tamanhos base)
     const POWERUP_TYPES = {
-        DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Tiro Duplo' },
-        TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Tiro Triplo' },
-        PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Tiro Perfurante' },
-        SPLASH_SHOT: { color: '#00ff88', baseSize: 25, name: 'Tiro Splash' },
-        EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Vida Extra' }
+        DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Double Shot' },
+        TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Triple Shot' },
+        PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Piercing Shot' },
+        SPLASH_SHOT: { color: '#00ff88', baseSize: 25, name: 'Splash Shot' },
+        EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Health' }
     };
 
     // SISTEMA DE ATRIBUTOS DAS NAVES
@@ -89,6 +89,21 @@ const GameFunctions = (function () {
             maneuverability: 4,
             resistance: 2,
             fireRate: 5
+        },
+        5: { // AQUA-STORM
+            maneuverability: 5,
+            resistance: 3,
+            fireRate: 4
+        },
+        6: { // NEBULA-HUNTER
+            maneuverability: 4,
+            resistance: 4,
+            fireRate: 5
+        },
+        7: { // GOLDEN-PHOENIX
+            maneuverability: 10,
+            resistance: 10,
+            fireRate: 10
         }
     };
 
@@ -161,6 +176,16 @@ const GameFunctions = (function () {
     const bulletSprite = new Image();
     bulletSprite.src = "assets/sprites/bullet.png";
 
+    // SPRITES DAS BALAS ESPECIAIS
+    const piercingBulletSprite = new Image();
+    piercingBulletSprite.src = "assets/sprites/bullet-piercing-shot.png";
+
+    const splashBulletSprite = new Image();
+    splashBulletSprite.src = "assets/sprites/bullet-splash-shot.png";
+
+    const bigShotBulletSprite = new Image();
+    bigShotBulletSprite.src = "assets/sprites/bullet-big-shot.png";
+
     // SPRITES DOS POWERUPS
     const healthPowerupSprite = new Image();
     healthPowerupSprite.src = "assets/sprites/powerup-health.png";
@@ -173,6 +198,9 @@ const GameFunctions = (function () {
 
     const piercingShotPowerupSprite = new Image();
     piercingShotPowerupSprite.src = "assets/sprites/powerup-piercing-shot.png";
+
+    const splashShotPowerupSprite = new Image();
+    splashShotPowerupSprite.src = "assets/sprites/powerup-splash-shot.png";
 
     // SISTEMA DE BACKGROUNDS DINÂMICOS
     const bgImage = new Image();
@@ -277,15 +305,15 @@ const GameFunctions = (function () {
     }
 
     function getFireRateCooldown() {
-        // Mapear fireRate (1-6) para cooldown em segundos
-        // fireRate 1 = 0.50s (lento)
-        // fireRate 3 = 0.35s (médio)
-        // fireRate 6 = 0.20s (rápido)
         const fireRate = currentShipAttributes.fireRate;
         
-        // Fórmula: cooldown diminui linearmente com fireRate
-        // 0.50 - (fireRate - 1) * 0.06
-        return 0.50 - ((fireRate - 1) * 0.06);
+        // Fórmula linear: interpolar entre 0.60s e 0.03s
+        // cooldown = 0.60 - ((fireRate - 1) / 9) * (0.60 - 0.03)
+        const minCooldown = 0.05; // 50ms para fireRate 10
+        const maxCooldown = 0.60; // 600ms para fireRate 1
+        const range = maxCooldown - minCooldown; // 0.57s
+        
+        return maxCooldown - ((fireRate - 1) / 9) * range;
     }
 
 
@@ -496,7 +524,10 @@ const GameFunctions = (function () {
                     radius: piercingRadius,
                     type: 'piercing',
                     color: '#4444ff',
-                    piercing: true
+                    piercing: true,
+                    useSprite: true,
+                    angle: ship.angle,
+                    customSprite: 'piercing'
                 });
                 break;
 
@@ -512,7 +543,8 @@ const GameFunctions = (function () {
                     color: '#00ff88',
                     splash: true,
                     useSprite: true,
-                    angle: ship.angle
+                    angle: ship.angle,
+                    customSprite: 'splash'
                 });
                 break;
 
@@ -563,7 +595,8 @@ const GameFunctions = (function () {
                 useSprite: true,
                 angle: randomAngle, // Ângulo para rotação do sprite
                 isSecondary: true, // Marca como secundário para não spawnar mais splash
-                splash: false // Tiros secundários não spawnam mais tiros
+                splash: false, // Tiros secundários não spawnam mais tiros
+                customSprite: 'splash'
             });
         }
 
@@ -634,7 +667,9 @@ const GameFunctions = (function () {
             type: 'big_shot',
             color: '#ff6600', // Laranja forte
             oneHitKill: true, // Mata qualquer asteroide em 1 hit
-            useSprite: false // Usar círculo para destacar o tamanho
+            useSprite: true, // Usar sprite do Big Shot
+            angle: ship.angle,
+            customSprite: 'big_shot'
         });
 
         // Tocar som especial
@@ -1499,26 +1534,47 @@ const GameFunctions = (function () {
 
         // TIROS
         bullets.forEach(b => {
-            if (b.useSprite && bulletSprite.complete) {
-                // Usar sprite para tiros normais, duplos e triplos
-                ctx.save();
-                ctx.translate(b.x, b.y);
-                ctx.rotate(b.angle);
+            if (b.useSprite) {
+                // Determinar qual sprite usar
+                let currentBulletSprite = bulletSprite; // padrão
+                
+                if (b.customSprite === 'piercing' && piercingBulletSprite.complete) {
+                    currentBulletSprite = piercingBulletSprite;
+                } else if (b.customSprite === 'splash' && splashBulletSprite.complete) {
+                    currentBulletSprite = splashBulletSprite;
+                } else if (b.customSprite === 'big_shot' && bigShotBulletSprite.complete) {
+                    currentBulletSprite = bigShotBulletSprite;
+                }
+                
+                if (currentBulletSprite.complete) {
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.rotate(b.angle);
 
-                // Tamanho do sprite da bala (responsivo)
-                const scale = getGameScale();
-                const bulletWidth = 8 * scale;
-                const bulletHeight = 16 * scale;
+                    // Tamanho do sprite da bala (responsivo)
+                    const scale = getGameScale();
+                    let bulletWidth = 8 * scale;
+                    let bulletHeight = 16 * scale;
+                    
+                    // Ajustar tamanho para tiros especiais
+                    if (b.customSprite === 'piercing') {
+                        bulletWidth *= 1.5; // Tiro piercing é maior
+                        bulletHeight *= 1.5;
+                    } else if (b.customSprite === 'big_shot') {
+                        bulletWidth *= 3.0; // Big Shot é muito maior
+                        bulletHeight *= 3.0;
+                    }
 
-                ctx.drawImage(
-                    bulletSprite,
-                    -bulletWidth / 2,
-                    -bulletHeight / 2,
-                    bulletWidth,
-                    bulletHeight
-                );
+                    ctx.drawImage(
+                        currentBulletSprite,
+                        -bulletWidth / 2,
+                        -bulletHeight / 2,
+                        bulletWidth,
+                        bulletHeight
+                    );
 
-                ctx.restore();
+                    ctx.restore();
+                }
             } else {
                 // Fallback para círculo (tiro perfurante e caso sprite não carregue)
                 ctx.fillStyle = b.color || 'red';
@@ -1557,8 +1613,7 @@ const GameFunctions = (function () {
                     powerupSprite = piercingShotPowerupSprite;
                     break;
                 case 'SPLASH_SHOT':
-                    // Não tem sprite, vai usar círculo verde
-                    powerupSprite = null;
+                    powerupSprite = splashShotPowerupSprite;
                     break;
             }
 
@@ -1583,6 +1638,25 @@ const GameFunctions = (function () {
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
+
+            // Desenhar nome do powerup embaixo do sprite
+            const scale = getGameScale();
+            const fontSize = Math.max(10, 12 * scale); // Tamanho responsivo
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            // Posição do texto (embaixo do sprite)
+            const textY = powerup.y + spriteSize / 2 + 5;
+            
+            // Outline preto para melhor legibilidade
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.strokeText(powerup.name, powerup.x, textY);
+            
+            // Texto branco por cima
+            ctx.fillStyle = 'white';
+            ctx.fillText(powerup.name, powerup.x, textY);
 
             ctx.globalAlpha = 1; // Resetar alpha
         });

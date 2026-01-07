@@ -48,7 +48,7 @@ const CustomizeHUD = (function () {
 
             const previewContent = this.type === 'ship' ? 
                 `<img src="${item.sprite}" alt="${item.name}" class="ship-image">` :
-                `<div class="special-icon">${item.icon}</div>`;
+                `<img src="${item.sprite}" alt="${item.name}" class="special-image">`;
 
             return $(`
                 <div class="${this.type}-card ${statusClass}" data-${this.dataAttribute}="${item.id}">
@@ -66,7 +66,7 @@ const CustomizeHUD = (function () {
             const $noneCard = $(`
                 <div class="special-card unlocked" data-special="0">
                     <div class="special-preview">
-                        <div class="special-icon">🌀</div>
+                        <img src="assets/sprites/special-shockwave.png" alt="SHOCKWAVE" class="special-image">
                     </div>
                     <div class="special-name">SHOCKWAVE</div>
                     <div class="special-status unlocked">PADRÃO</div>
@@ -138,9 +138,9 @@ const CustomizeHUD = (function () {
                 <div class="tooltip-ship-name">${ship.name}</div>
                 <div class="tooltip-description">${ship.description}</div>
                 <div class="tooltip-attributes">
-                    <div>🚀 Manobrabilidade: ${this.createAttributeBar(ship.attributes.maneuverability, 6)}</div>
-                    <div>🛡️ Resistência: ${this.createAttributeBar(ship.attributes.resistance, 4)} (${ship.attributes.resistance} hits)</div>
-                    <div>🔥 Cadência: ${this.createAttributeBar(ship.attributes.fireRate, 6)}</div>
+                    <div>🚀 Manobrabilidade: ${this.createAttributeBar(ship.attributes.maneuverability, 10)}</div>
+                    <div>🛡️ Resistência: ${this.createAttributeBar(ship.attributes.resistance, 10)} (${ship.attributes.resistance} hits)</div>
+                    <div>🔥 Cadência: ${this.createAttributeBar(ship.attributes.fireRate, 10)}</div>
                 </div>
                 ${unlockInfo}
                 <div class="tooltip-status ${isUnlocked ? 'available' : 'locked'}">
@@ -158,8 +158,9 @@ const CustomizeHUD = (function () {
                 // Especial padrão (Shockwave)
                 special = {
                     name: 'SHOCKWAVE',
-                    description: 'Dispara uma onda de tiros em todas as direções ao redor da nave. Especial padrão sempre disponível.',
-                    cooldown: 5.0
+                    description: 'Dispara uma onda de tiros em todas as direções ao redor da nave, muito eficiente no início do jogo quando os asteróides requerem poucos hits para serem destruídos. (Desbloqueado por padrão).',
+                    cooldown: 5.0,
+                    sprite: 'assets/sprites/special-shockwave.png'
                 };
                 isUnlocked = true;
             } else {
@@ -186,7 +187,7 @@ const CustomizeHUD = (function () {
             this.updateTooltip(tooltipContent);
         }
 
-        static createAttributeBar(value, maxValue = 5) {
+        static createAttributeBar(value, maxValue = 10) {
             const clampedValue = Math.min(value, maxValue);
             const filled = '★'.repeat(clampedValue);
             const empty = '☆'.repeat(Math.max(0, maxValue - clampedValue));

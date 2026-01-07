@@ -54,6 +54,45 @@ const GameData = (function () {
             },
             unlockType: 'playTime',
             unlockRequirement: 60
+        },
+        5: {
+            id: 5,
+            name: 'AQUA-STORM',
+            description: 'Nave de combate aquática com propulsão hidro-iônica. Sua coloração azul água reflete sua origem nos oceanos de Kepler-442b.',
+            sprite: 'assets/sprites/Ship-5.png',
+            attributes: {
+                maneuverability: 5,
+                resistance: 3,
+                fireRate: 4
+            },
+            unlockType: 'totalScore',
+            unlockRequirement: 3000
+        },
+        6: {
+            id: 6,
+            name: 'NEBULA-HUNTER',
+            description: 'Caçador interdimensional com tecnologia de dobra espacial. Suas cores roxas e verdes indicam exposição à radiação de nebulosas.',
+            sprite: 'assets/sprites/Ship-6.png',
+            attributes: {
+                maneuverability: 4,
+                resistance: 4,
+                fireRate: 5
+            },
+            unlockType: 'totalScore',
+            unlockRequirement: 8000
+        },
+        7: {
+            id: 7,
+            name: 'GOLDEN-PHOENIX',
+            description: 'A nave lendária forjada com ouro estelar e tecnologia ancestral. Apenas os pilotos mais experientes podem comandar esta máquina de guerra suprema.',
+            sprite: 'assets/sprites/Ship-7.png',
+            attributes: {
+                maneuverability: 10,
+                resistance: 10,
+                fireRate: 10
+            },
+            unlockType: 'totalScore',
+            unlockRequirement: 20000
         }
     };
 
@@ -109,8 +148,9 @@ const GameData = (function () {
         1: {
             id: 1,
             name: 'BIG SHOT',
-            description: 'Dispara uma bala gigante que destrói qualquer asteroide em um único hit, independente da vida dele.',
+            description: 'Dispara uma bala gigante que destrói qualquer asteroide em um único hit. Muito eficiente no end-game quando os asteróides requerem múltiplos hits para serem destruídos.',
             icon: '💥',
+            sprite: 'assets/sprites/special-bigshot.png',
             unlockType: 'totalScore',
             unlockRequirement: 1000,
             cooldown: 3.0, // segundos
