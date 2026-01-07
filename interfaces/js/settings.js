@@ -191,7 +191,7 @@ const SettingsHUD = (function () {
                     a.download = 'asteroids_save.json';
                     a.click();
                     URL.revokeObjectURL(url);
-                    showMessage('Save exportado com sucesso!', 'success');
+                    showMessage('✅ Save exportado com sucesso! (Criptografado)', 'success');
                 }
             });
 

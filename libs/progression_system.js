@@ -421,7 +421,71 @@ const ProgressionSystem = (function () {
         };
     }
 
-    // Exportar dados para JSON
+    // Função para gerar hash simples (checksum)
+    function generateHash(data) {
+        let hash = 0;
+        const str = JSON.stringify(data);
+        
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Converter para 32-bit integer
+        }
+        
+        return Math.abs(hash).toString(16);
+    }
+
+    // Função para criptografar dados (Base64 + Hash)
+    function encryptData(data) {
+        try {
+            // Gerar hash dos dados originais
+            const hash = generateHash(data);
+            
+            // Adicionar hash aos dados
+            const dataWithHash = {
+                ...data,
+                _hash: hash
+            };
+            
+            // Converter para JSON e depois para Base64
+            const jsonString = JSON.stringify(dataWithHash);
+            const encoded = btoa(jsonString); // Base64 encoding
+            
+            return encoded;
+        } catch (error) {
+            console.error('Erro ao criptografar dados:', error);
+            return null;
+        }
+    }
+
+    // Função para descriptografar dados (Base64 + Verificação de Hash)
+    function decryptData(encoded) {
+        try {
+            // Decodificar de Base64
+            const jsonString = atob(encoded);
+            const data = JSON.parse(jsonString);
+            
+            // Extrair hash
+            const storedHash = data._hash;
+            delete data._hash; // Remover hash dos dados
+            
+            // Gerar hash dos dados atuais
+            const currentHash = generateHash(data);
+            
+            // Verificar integridade
+            if (storedHash !== currentHash) {
+                console.warn('⚠️ Aviso: Arquivo foi modificado! Hash não corresponde.');
+                return null; // Arquivo foi manipulado
+            }
+            
+            return data;
+        } catch (error) {
+            console.error('Erro ao descriptografar dados:', error);
+            return null;
+        }
+    }
+
+    // Exportar dados para JSON (criptografado)
     function exportData() {
         const data = {
             version: 3,
@@ -434,35 +498,80 @@ const ProgressionSystem = (function () {
             selectedSpecial: getSelectedSpecial(),
             unlockedSpecials: getUnlockedSpecials()
         };
-        return JSON.stringify(data, null, 2);
+        
+        // Criptografar dados
+        const encrypted = encryptData(data);
+        
+        if (!encrypted) {
+            return JSON.stringify({ error: 'Erro ao exportar save' });
+        }
+        
+        // Retornar em formato JSON com dados criptografados
+        const exportedData = {
+            encrypted: true,
+            data: encrypted,
+            exportedAt: new Date().toLocaleString('pt-BR')
+        };
+        
+        return JSON.stringify(exportedData, null, 2);
     }
 
-    // Importar dados de JSON
+    // Importar dados de JSON (descriptografado)
     function importData(jsonString) {
         try {
-            const data = JSON.parse(jsonString);
+            const fileData = JSON.parse(jsonString);
 
             // Validação básica
-            if (!data || typeof data !== 'object') {
+            if (!fileData || typeof fileData !== 'object') {
                 throw new Error('Formato inválido');
             }
 
-            // Restaurar dados
-            if (typeof data.bestScore === 'number') setBestScore(data.bestScore);
-            if (typeof data.totalScore === 'number') setTotalScore(data.totalScore);
-            if (typeof data.playTime === 'number') setPlayTime(data.playTime);
-            if (typeof data.selectedShip === 'number') setSelectedShip(data.selectedShip);
-            if (Array.isArray(data.unlockedShips)) setUnlockedShips(data.unlockedShips);
-            if (typeof data.selectedSpecial === 'number') setSelectedSpecial(data.selectedSpecial);
-            if (Array.isArray(data.unlockedSpecials)) setUnlockedSpecials(data.unlockedSpecials);
+            // Verificar se está criptografado
+            if (fileData.encrypted === true && fileData.data) {
+                // Descriptografar dados
+                const data = decryptData(fileData.data);
+                
+                if (!data) {
+                    return { 
+                        success: false, 
+                        message: 'Erro ao importar: Arquivo foi modificado ou corrompido!' 
+                    };
+                }
+                
+                // Restaurar dados descriptografados
+                if (typeof data.bestScore === 'number') setBestScore(data.bestScore);
+                if (typeof data.totalScore === 'number') setTotalScore(data.totalScore);
+                if (typeof data.playTime === 'number') setPlayTime(data.playTime);
+                if (typeof data.selectedShip === 'number') setSelectedShip(data.selectedShip);
+                if (Array.isArray(data.unlockedShips)) setUnlockedShips(data.unlockedShips);
+                if (typeof data.selectedSpecial === 'number') setSelectedSpecial(data.selectedSpecial);
+                if (Array.isArray(data.unlockedSpecials)) setUnlockedSpecials(data.unlockedSpecials);
 
-            // Recarregar dados internos
-            initializeData();
+                // Recarregar dados internos
+                initializeData();
 
-            return { success: true, message: 'Dados importados com sucesso!' };
+                return { success: true, message: 'Save importado com sucesso!' };
+            } else {
+                // Arquivo antigo sem criptografia (compatibilidade)
+                console.warn('⚠️ Aviso: Save antigo detectado (sem criptografia)');
+                
+                // Restaurar dados do formato antigo
+                if (typeof fileData.bestScore === 'number') setBestScore(fileData.bestScore);
+                if (typeof fileData.totalScore === 'number') setTotalScore(fileData.totalScore);
+                if (typeof fileData.playTime === 'number') setPlayTime(fileData.playTime);
+                if (typeof fileData.selectedShip === 'number') setSelectedShip(fileData.selectedShip);
+                if (Array.isArray(fileData.unlockedShips)) setUnlockedShips(fileData.unlockedShips);
+                if (typeof fileData.selectedSpecial === 'number') setSelectedSpecial(fileData.selectedSpecial);
+                if (Array.isArray(fileData.unlockedSpecials)) setUnlockedSpecials(fileData.unlockedSpecials);
+
+                // Recarregar dados internos
+                initializeData();
+
+                return { success: true, message: 'Save antigo importado com sucesso!' };
+            }
         } catch (error) {
             console.error('Erro ao importar save:', error);
-            return { success: false, message: 'Erro ao importar: Arquivo inválido.' };
+            return { success: false, message: 'Erro ao importar: Arquivo inválido ou corrompido.' };
         }
     }
 
@@ -510,12 +619,14 @@ const ProgressionSystem = (function () {
         getSelectedShipSprite,
         isShipUnlocked,
         getUnlockedShips,
+        setUnlockedShips,
 
         // Especiais
         getSelectedSpecial,
         setSelectedSpecial,
         isSpecialUnlocked,
         getUnlockedSpecials,
+        setUnlockedSpecials,
 
         // Informações
         getProgressInfo,
@@ -525,6 +636,8 @@ const ProgressionSystem = (function () {
         resetProgress,
         exportData,
         importData,
+        encryptData,
+        decryptData,
 
         // Constantes
         UNLOCK_REQUIREMENTS
