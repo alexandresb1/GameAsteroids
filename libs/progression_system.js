@@ -379,10 +379,26 @@ const ProgressionSystem = (function () {
 
     // Resetar progresso (para debug/teste)
     function resetProgress() {
+        console.log('=== RESETANDO PROGRESSO COMPLETO ===');
+        
+        // Remover TODOS os dados salvos
         localStorage.removeItem(STORAGE_KEYS.BEST_SCORE);
+        localStorage.removeItem(STORAGE_KEYS.TOTAL_SCORE);
+        localStorage.removeItem(STORAGE_KEYS.PLAY_TIME);
         localStorage.removeItem(STORAGE_KEYS.SELECTED_SHIP);
         localStorage.removeItem(STORAGE_KEYS.UNLOCKED_SHIPS);
+        localStorage.removeItem(STORAGE_KEYS.SELECTED_SPECIAL);
+        localStorage.removeItem(STORAGE_KEYS.UNLOCKED_SPECIALS);
+        
+        // Resetar acumulador de sessão
+        currentSessionTime = 0;
+        
+        console.log('✅ Todos os dados foram removidos do localStorage');
+        
+        // Reinicializar com valores padrão
         initializeData();
+        
+        console.log('✅ Progresso resetado com sucesso!');
     }
 
     // Obter sprite da nave selecionada

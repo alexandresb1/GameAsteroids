@@ -156,9 +156,20 @@ const SettingsHUD = (function () {
 
             $('#confirmResetBtn').on('click', function () {
                 if (typeof ProgressionSystem !== 'undefined') {
+                    console.log('=== INICIANDO RESET COMPLETO ===');
                     ProgressionSystem.resetProgress();
-                    showMessage('Progresso resetado com sucesso!', 'success');
+                    
+                    // Mostrar mensagem de sucesso
+                    showMessage('Progresso resetado com sucesso! Recarregando...', 'success');
+                    
+                    // Fechar modal
                     $('#confirmModal').fadeOut(200);
+                    
+                    // Recarregar página após 1.5 segundos para aplicar mudanças
+                    setTimeout(() => {
+                        console.log('=== RECARREGANDO PÁGINA ===');
+                        window.location.reload();
+                    }, 1500);
                 }
             });
 
