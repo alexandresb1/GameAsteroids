@@ -1190,6 +1190,12 @@ const GameFunctions = (function () {
         loadSelectedShipAttributes();
         loadSelectedSpecial();
         resetGame();
+        
+        // RESETAR tempo da sessão ao iniciar nova partida
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+        }
+        
         // Mostrar botão de pause quando jogo inicia
         if (typeof AudioUI !== 'undefined') {
             AudioUI.showPauseButton();
@@ -1207,6 +1213,12 @@ const GameFunctions = (function () {
         loadSelectedShipAttributes();
         loadSelectedSpecial();
         resetGame();
+        
+        // RESETAR tempo da sessão ao reiniciar partida
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+        }
+        
         // Mostrar botão de pause quando jogo reinicia
         if (typeof AudioUI !== 'undefined') {
             AudioUI.showPauseButton();
@@ -1265,6 +1277,12 @@ const GameFunctions = (function () {
 
         // Resetar lastFrameTime para evitar delta time incorreto
         lastFrameTime = 0;
+
+        // DESCARTAR tempo da sessão atual (não salvar)
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+            console.log('⚠️ Sessão descartada (voltou ao menu sem finalizar)');
+        }
 
         // CRÍTICO: Destruir completamente o PauseHUD
         if (typeof PauseHUD !== 'undefined') {
@@ -1425,8 +1443,8 @@ const GameFunctions = (function () {
         // Verificar disparo contínuo (se barra de espaço está pressionada)
         updateShooting(currentTime);
 
-        // Adicionar tempo de jogo ao ProgressionSystem
-        if (typeof ProgressionSystem !== 'undefined') {
+        // Adicionar tempo de jogo ao ProgressionSystem (APENAS quando está jogando)
+        if (typeof ProgressionSystem !== 'undefined' && gameState === 'playing') {
             ProgressionSystem.addPlayTime(clampedDeltaTime);
         }
 

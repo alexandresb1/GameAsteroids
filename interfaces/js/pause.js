@@ -298,14 +298,14 @@ const PauseHUD = (function () {
     function showEndGameConfirm() {
         // Obter dados atuais do jogo
         const currentScore = typeof GameFunctions !== 'undefined' ? GameFunctions.getScore() : 0;
-        const playTime = typeof ProgressionSystem !== 'undefined' ? ProgressionSystem.getPlayTime() : 0;
+        const sessionTime = typeof ProgressionSystem !== 'undefined' ? ProgressionSystem.getSessionTime() : 0;
         
         console.log('=== FINALIZAR JOGO ===');
         console.log('Score atual:', currentScore);
-        console.log('Tempo de jogo (segundos):', playTime);
+        console.log('Tempo da sessão (segundos):', sessionTime);
         
         // Formatar tempo de jogo
-        const totalSeconds = Math.floor(playTime);
+        const totalSeconds = Math.floor(sessionTime);
         const hours = Math.floor(totalSeconds / 3600);
         const minutes = Math.floor((totalSeconds % 3600) / 60);
         const seconds = totalSeconds % 60;

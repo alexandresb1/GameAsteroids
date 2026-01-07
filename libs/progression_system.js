@@ -122,10 +122,14 @@ const ProgressionSystem = (function () {
 
     // Gerenciar tempo de jogo (em segundos)
     function getPlayTime() {
+        // Retorna o tempo TOTAL (salvo no localStorage)
         const stored = localStorage.getItem(STORAGE_KEYS.PLAY_TIME);
-        const savedTime = parseInt(stored) || 0;
-        // Retornar tempo salvo + tempo da sessão atual
-        return savedTime + Math.floor(currentSessionTime);
+        return parseInt(stored) || 0;
+    }
+
+    function getSessionTime() {
+        // Retorna o tempo da SESSÃO ATUAL (não salvo ainda)
+        return Math.floor(currentSessionTime);
     }
 
     function setPlayTime(seconds) {
@@ -143,15 +147,17 @@ const ProgressionSystem = (function () {
     function saveCurrentSession() {
         // Salvar o tempo acumulado da sessão no localStorage
         if (currentSessionTime > 0) {
-            const totalTime = getPlayTime();
+            const totalTime = getPlayTime() + Math.floor(currentSessionTime);
             setPlayTime(totalTime);
-            console.log('✅ Sessão salva! Tempo total:', Math.floor(totalTime), 'segundos');
+            console.log('✅ Sessão salva! Tempo da sessão:', Math.floor(currentSessionTime), 'segundos');
+            console.log('✅ Tempo total acumulado:', totalTime, 'segundos');
             currentSessionTime = 0; // Resetar acumulador
         }
     }
 
     function resetSessionTime() {
-        // Resetar o acumulador da sessão (usado quando volta ao menu sem salvar)
+        // Resetar o acumulador da sessão (usado quando inicia nova partida)
+        console.log('🔄 Tempo de sessão resetado');
         currentSessionTime = 0;
     }
 
@@ -474,6 +480,7 @@ const ProgressionSystem = (function () {
         setTotalScore,
         addToTotalScore,
         getPlayTime,
+        getSessionTime,
         setPlayTime,
         addPlayTime,
         saveCurrentSession,
