@@ -607,8 +607,6 @@ const GameFunctions = (function () {
                 customSprite: 'splash'
             });
         }
-
-        console.log('Splash! 3 tiros secundários spawnados em', x, y);
     }
 
     function useSpecial() {
@@ -653,8 +651,6 @@ const GameFunctions = (function () {
         if (typeof SoundEffectsManager !== 'undefined') {
             SoundEffectsManager.playShoot('shockwave');
         }
-
-        console.log('ESPECIAL: Shockwave ativado!');
     }
 
     function useBigShot() {
@@ -684,8 +680,6 @@ const GameFunctions = (function () {
         if (typeof SoundEffectsManager !== 'undefined') {
             SoundEffectsManager.playShoot('big_shot');
         }
-
-        console.log('ESPECIAL: Big Shot ativado!');
     }
 
     function SpawnAsteroid() {
@@ -874,8 +868,7 @@ const GameFunctions = (function () {
     }
 
     function showPowerupMessage(message) {
-        // Criar notificação temporária na tela
-        console.log(`POWERUP: ${message}`); // Temporário - depois pode ser uma UI visual
+        console.log(`POWERUP: ${message}`);
     }
 
     function updateAmmoTimer(deltaTime) {
@@ -892,14 +885,13 @@ const GameFunctions = (function () {
         if (specialCooldown > 0) {
             specialCooldown -= deltaTime;
             if (specialCooldown < 0) {
-                specialCooldown = 0; // Garantir que não fique negativo
+                specialCooldown = 0;
             }
         }
     }
 
 
     function SpawnInitialAsteroids() {
-        // Spawnar asteroides até atingir o máximo inicial (3)
         while (asteroids.length < BASE_MAX_ASTEROIDS) {
             SpawnAsteroid();
         }

@@ -43,6 +43,7 @@ const SoundEffectsManager = (function () {
         double: createAudioPool('audio/SoundEffects/shoot_2.wav', 0.3, 8),
         triple: createAudioPool('audio/SoundEffects/shoot_3.wav', 0.3, 8),
         piercing: createAudioPool('audio/SoundEffects/shoot_4.wav', 0.3, 8),
+        splash: createAudioPool('audio/SoundEffects/shoot_3.wav', 0.3, 8),
         shockwave: createAudioPool('audio/SoundEffects/shoot_5.wav', 0.3, 3)
     };
 
@@ -51,8 +52,8 @@ const SoundEffectsManager = (function () {
 
     // Criar pools para powerups
     const powerupPools = [
-        createAudioPool('audio/SoundEffects/powerup_1.wav', 0.5, 3),
-        createAudioPool('audio/SoundEffects/powerup_2.wav', 0.5, 3)
+        createAudioPool('audio/SoundEffects/powerup_1.wav', 0.7, 3),
+        createAudioPool('audio/SoundEffects/powerup_2.wav', 0.7, 3)
     ];
 
     // Variáveis de controle
@@ -60,7 +61,7 @@ const SoundEffectsManager = (function () {
     let explosionVolume = 0.5;
     let shootVolume = 0.3;
     let hitVolume = 0.4;
-    let powerupVolume = 0.5;
+    let powerupVolume = 0.7;
 
     /**
      * Toca um som de explosão aleatório
