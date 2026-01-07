@@ -117,6 +117,11 @@ const StartScreenHUD = (function () {
     function show() {
         loadHTML();
 
+        // PROTEÇÃO: Destruir qualquer PauseHUD residual
+        if (typeof PauseHUD !== 'undefined') {
+            PauseHUD.destroy();
+        }
+
         const overlay = $('#startScreenOverlay');
         overlay.css({ display: 'flex', opacity: 0 });
 

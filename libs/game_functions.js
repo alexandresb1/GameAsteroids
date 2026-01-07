@@ -340,6 +340,14 @@ const GameFunctions = (function () {
             // Pause só dispara no keydown
             if (e.key === KEY_PAUSE) {
                 console.log('ESC pressionado - gameState:', gameState);
+                
+                // PROTEÇÃO EXTRA: Verificar se PauseHUD está visível mas não deveria estar
+                if (typeof PauseHUD !== 'undefined' && gameState === 'menu') {
+                    console.log('PauseHUD detectado no menu - destruindo');
+                    PauseHUD.destroy();
+                    return;
+                }
+                
                 togglePause();
             }
         });
@@ -1228,6 +1236,10 @@ const GameFunctions = (function () {
         // CRÍTICO: Não permitir pause/resume se não estiver em jogo
         if (gameState !== 'playing' && gameState !== 'paused') {
             console.log('Pause bloqueado - gameState:', gameState);
+            // GARANTIR que PauseHUD está escondido se não estamos em jogo
+            if (typeof PauseHUD !== 'undefined') {
+                PauseHUD.forceHide();
+            }
             return;
         }
 
@@ -1246,6 +1258,7 @@ const GameFunctions = (function () {
         console.log('gameState antes:', gameState);
         
         // CRÍTICO: Setar gameState PRIMEIRO para parar update/draw imediatamente
+        const previousState = gameState;
         gameState = 'menu';
         
         console.log('gameState depois:', gameState);
@@ -1253,13 +1266,9 @@ const GameFunctions = (function () {
         // Resetar lastFrameTime para evitar delta time incorreto
         lastFrameTime = 0;
 
-        // CRÍTICO: Forçar esconder pause IMEDIATAMENTE (múltiplas vezes para garantir)
+        // CRÍTICO: Destruir completamente o PauseHUD
         if (typeof PauseHUD !== 'undefined') {
-            PauseHUD.forceHide();
-            // Chamar novamente após um pequeno delay para garantir
-            setTimeout(() => {
-                PauseHUD.forceHide();
-            }, 100);
+            PauseHUD.destroy();
         }
 
         // Esconder outras interfaces
@@ -1293,6 +1302,8 @@ const GameFunctions = (function () {
 
         // Tocar música do menu (forçar restart porque estamos voltando do jogo)
         AudioManager.playMenuMusic(true);
+        
+        console.log('=== BACK TO MENU CONCLUÍDO ===');
     }
 
     function resetGame() {

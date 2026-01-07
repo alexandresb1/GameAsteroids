@@ -77,12 +77,23 @@ const PauseHUD = (function () {
 
             // Configurar eventos dos botões usando jQuery
             $('#resumeGameBtn').on('click', function () {
+                console.log('=== RESUME BUTTON CLICADO ===');
+                
                 // Verificar se realmente está pausado antes de resumir
-                if (typeof GameFunctions !== 'undefined' && GameFunctions.getGameState() === 'paused') {
-                    hide();
-                    GameFunctions.resume();
+                if (typeof GameFunctions !== 'undefined') {
+                    const currentState = GameFunctions.getGameState();
+                    console.log('Estado atual do jogo:', currentState);
+                    
+                    if (currentState === 'paused') {
+                        hide();
+                        GameFunctions.resume();
+                    } else {
+                        console.warn('Tentativa de resumir quando não está pausado. Estado:', currentState);
+                        // Se não está pausado, destruir o overlay
+                        destroy();
+                    }
                 } else {
-                    console.warn('Tentativa de resumir quando não está pausado');
+                    console.error('GameFunctions não disponível');
                     forceHide();
                 }
             });
@@ -138,6 +149,15 @@ const PauseHUD = (function () {
     }
 
     function show() {
+        // PROTEÇÃO: Só mostrar se o jogo está realmente pausado
+        if (typeof GameFunctions !== 'undefined') {
+            const currentState = GameFunctions.getGameState();
+            if (currentState !== 'paused') {
+                console.warn('PauseHUD.show() bloqueado - gameState não é paused:', currentState);
+                return;
+            }
+        }
+        
         loadHTML();
 
         const $overlay = $('#pauseOverlay');
@@ -226,6 +246,37 @@ const PauseHUD = (function () {
         }
         
         console.log('PauseHUD forceHide executado');
+    }
+
+    function destroy() {
+        console.log('=== PauseHUD DESTROY INICIADO ===');
+        
+        const $overlay = $('#pauseOverlay');
+        const $popup = $('#endGameConfirm');
+        
+        if ($overlay.length) {
+            // Remover TODOS os event listeners
+            $overlay.find('*').off();
+            $overlay.off();
+            
+            // Parar todas as animações
+            $overlay.stop(true, true);
+            if ($popup.length) {
+                $popup.stop(true, true);
+            }
+            
+            // Remover completamente do DOM
+            $overlay.remove();
+            
+            // Marcar como não carregado para forçar recriação
+            isLoaded = false;
+            
+            console.log('PauseHUD destruído e removido do DOM');
+        } else {
+            console.log('PauseHUD não encontrado no DOM');
+        }
+        
+        console.log('=== PauseHUD DESTROY CONCLUÍDO ===');
     }
 
     function isVisible() {
@@ -335,6 +386,7 @@ const PauseHUD = (function () {
         show,
         hide,
         forceHide,
+        destroy,
         isVisible
     };
 
