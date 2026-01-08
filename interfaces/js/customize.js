@@ -1,11 +1,254 @@
 const CustomizeHUD = (function () {
     let isLoaded = false;
 
+    // ========================================
+    // SISTEMA DE COMPONENTES UNIVERSAIS
+    // ========================================
+
+    /**
+     * Classe base para componentes de cards (naves, especiais, etc.)
+     */
+    class CardComponent {
+        constructor(type, gridSelector, dataAttribute) {
+            this.type = type; // 'ship' ou 'special'
+            this.gridSelector = gridSelector;
+            this.dataAttribute = dataAttribute;
+        }
+
+        // Gerar cards baseado nos dados
+        generateCards(items, getUnlockedFn, getSelectedFn) {
+            const $grid = $(this.gridSelector);
+            
+            if ($grid.length === 0) {
+                console.error(`Grid ${this.gridSelector} não encontrado!`);
+                return;
+            }
+            
+            $grid.empty();
+
+            // Adicionar card especial para "nenhum" se for especiais
+            if (this.type === 'special') {
+                this.addDefaultSpecialCard($grid);
+            }
+
+            // Adicionar cards dos itens
+            items.forEach(item => {
+                const isUnlocked = getUnlockedFn(item.id);
+                const $card = this.createCard(item, isUnlocked);
+                $grid.append($card);
+            });
+        }
+
+        // Criar card individual
+        createCard(item, isUnlocked) {
+            const statusClass = isUnlocked ? 'unlocked' : 'locked';
+            const statusText = isUnlocked ? 
+                (this.type === 'ship' ? 'DESBLOQUEADA' : 'DESBLOQUEADO') : 
+                'BLOQUEADO';
+
+            const previewContent = this.type === 'ship' ? 
+                `<img src="${item.sprite}" alt="${item.name}" class="ship-image">` :
+                `<img src="${item.sprite}" alt="${item.name}" class="special-image">`;
+
+            return $(`
+                <div class="${this.type}-card ${statusClass}" data-${this.dataAttribute}="${item.id}">
+                    <div class="${this.type}-preview">
+                        ${previewContent}
+                    </div>
+                    <div class="${this.type}-name">${item.name}</div>
+                    <div class="${this.type}-status ${statusClass}">${statusText}</div>
+                </div>
+            `);
+        }
+
+        // Adicionar card padrão para especiais (Shockwave)
+        addDefaultSpecialCard($grid) {
+            const $noneCard = $(`
+                <div class="special-card unlocked" data-special="0">
+                    <div class="special-preview">
+                        <img src="assets/sprites/special-shockwave.png" alt="SHOCKWAVE" class="special-image">
+                    </div>
+                    <div class="special-name">SHOCKWAVE</div>
+                    <div class="special-status unlocked">PADRÃO</div>
+                </div>
+            `);
+            $grid.append($noneCard);
+        }
+
+        // Atualizar estado visual dos cards
+        updateCardStates(items, getUnlockedFn, getSelectedFn) {
+            const selectedId = getSelectedFn();
+
+            $(`.${this.type}-card`).each(function () {
+                const $card = $(this);
+                const itemId = $card.data(this.dataAttribute);
+                const $status = $card.find(`.${this.type}-status`);
+
+                // Atualizar estado de desbloqueio
+                let isUnlocked;
+                if (this.type === 'special' && itemId === 0) {
+                    isUnlocked = true; // Shockwave sempre desbloqueado
+                } else {
+                    isUnlocked = getUnlockedFn(itemId);
+                }
+
+                if (isUnlocked) {
+                    $card.removeClass('locked').addClass('unlocked');
+                    $status.removeClass('locked').addClass('unlocked');
+                    if (this.type === 'special' && itemId === 0) {
+                        $status.text('PADRÃO');
+                    } else {
+                        $status.text(this.type === 'ship' ? 'DESBLOQUEADA' : 'DESBLOQUEADO');
+                    }
+                } else {
+                    $card.removeClass('unlocked').addClass('locked');
+                    $status.removeClass('unlocked').addClass('locked').text('BLOQUEADO');
+                }
+
+                // Marcar item selecionado
+                if (itemId == selectedId) {
+                    $card.addClass('selected');
+                } else {
+                    $card.removeClass('selected');
+                }
+            }.bind(this));
+        }
+    }
+
+    // Instâncias dos componentes
+    const shipComponent = new CardComponent('ship', '#shipsGrid', 'ship');
+    const specialComponent = new CardComponent('special', '#specialsGrid', 'special');
+
+    // ========================================
+    // SISTEMA DE TOOLTIPS UNIVERSAL
+    // ========================================
+
+    class TooltipManager {
+        static showShipTooltip(shipId) {
+            const ship = GameData.getShipById(shipId);
+            if (!ship) {
+                console.error('Nave não encontrada:', shipId);
+                return;
+            }
+
+            const isUnlocked = ProgressionSystem.isShipUnlocked(shipId);
+            const unlockInfo = this.getUnlockInfo(ship, isUnlocked);
+
+            const tooltipContent = `
+                <div class="tooltip-ship-name">${ship.name}</div>
+                <div class="tooltip-description">${ship.description}</div>
+                <div class="tooltip-attributes">
+                    <div>🚀 Manobrabilidade: ${this.createAttributeBar(ship.attributes.maneuverability, 10)}</div>
+                    <div>🛡️ Resistência: ${this.createAttributeBar(ship.attributes.resistance, 10)} (${ship.attributes.resistance} hits)</div>
+                    <div>🔥 Cadência: ${this.createAttributeBar(ship.attributes.fireRate, 10)}</div>
+                </div>
+                ${unlockInfo}
+                <div class="tooltip-status ${isUnlocked ? 'available' : 'locked'}">
+                    ${isUnlocked ? `<button class="select-ship-btn" data-ship-id="${shipId}">SELECIONAR</button>` : 'BLOQUEADO'}
+                </div>
+            `;
+
+            this.updateTooltip(tooltipContent);
+        }
+
+        static showSpecialTooltip(specialId) {
+            let special, isUnlocked;
+
+            if (specialId === 0) {
+                // Especial padrão (Shockwave)
+                special = {
+                    name: 'SHOCKWAVE',
+                    description: 'Dispara uma onda de tiros em todas as direções ao redor da nave, muito eficiente no início do jogo quando os asteróides requerem poucos hits para serem destruídos. (Desbloqueado por padrão).',
+                    cooldown: 5.0,
+                    sprite: 'assets/sprites/special-shockwave.png'
+                };
+                isUnlocked = true;
+            } else {
+                special = GameData.getSpecialById(specialId);
+                if (!special) {
+                    console.error('Especial não encontrado:', specialId);
+                    return;
+                }
+                isUnlocked = ProgressionSystem.isSpecialUnlocked(specialId);
+            }
+
+            const unlockInfo = specialId === 0 ? '' : this.getUnlockInfo(special, isUnlocked);
+
+            const tooltipContent = `
+                <div class="tooltip-special-name">${special.name}</div>
+                <div class="tooltip-description">${special.description}</div>
+                <div class="tooltip-cooldown">⏱️ Cooldown: ${special.cooldown}s</div>
+                ${unlockInfo}
+                <div class="tooltip-status ${isUnlocked ? 'available' : 'locked'}">
+                    ${isUnlocked ? `<button class="select-special-btn" data-special-id="${specialId}">SELECIONAR</button>` : 'BLOQUEADO'}
+                </div>
+            `;
+
+            this.updateTooltip(tooltipContent);
+        }
+
+        static createAttributeBar(value, maxValue = 10) {
+            const clampedValue = Math.min(value, maxValue);
+            const filled = '★'.repeat(clampedValue);
+            const empty = '☆'.repeat(Math.max(0, maxValue - clampedValue));
+            return filled + empty;
+        }
+
+        static getUnlockInfo(item, isUnlocked) {
+            if (isUnlocked) return '';
+
+            const unlockLabel = GameData.UNLOCK_TYPE_LABELS[item.unlockType];
+            const requirement = GameData.formatUnlockRequirement(item.unlockType, item.unlockRequirement);
+
+            let currentProgress = '';
+            switch (item.unlockType) {
+                case 'highScore':
+                    currentProgress = `Seu melhor: ${ProgressionSystem.getBestScore()}`;
+                    break;
+                case 'totalScore':
+                    currentProgress = `Seu total: ${ProgressionSystem.getTotalScore()}`;
+                    break;
+                case 'playTime':
+                    const playTime = ProgressionSystem.getPlayTime();
+                    const mins = Math.floor(playTime / 60);
+                    const secs = playTime % 60;
+                    currentProgress = `Seu tempo: ${mins}m ${secs}s`;
+                    break;
+            }
+
+            return `
+                <div class="tooltip-unlock-info">
+                    <div style="color: #ff6666; margin-bottom: 5px;">🔒 ${unlockLabel}: ${requirement}</div>
+                    <div style="color: #aaa; font-size: 0.85em;">${currentProgress}</div>
+                </div>
+            `;
+        }
+
+        static updateTooltip(htmlContent) {
+            const $tooltip = $('#shipTooltip');
+            if ($tooltip.length === 0) {
+                console.error('Tooltip não encontrado no DOM!');
+                return;
+            }
+            
+            const $content = $tooltip.find('.tooltip-content');
+            if ($content.length === 0) {
+                console.error('tooltip-content não encontrado!');
+                return;
+            }
+            
+            $content.html(htmlContent);
+        }
+    }
+
+    // ========================================
+    // FUNÇÕES PRINCIPAIS
+    // ========================================
+
     function loadHTML() {
         if (isLoaded) return;
 
         try {
-            // HTML estrutural - cards serão gerados dinamicamente
             const html = `
 <div id="customizeOverlay" class="interface-overlay">
     <div class="customize-container">
@@ -33,11 +276,8 @@ const CustomizeHUD = (function () {
             <div class="tab-content" id="tab-especiais">
                 <div class="specials-section">
                     <h2 class="section-title">ESPECIAIS</h2>
-                    <div class="specials-placeholder">
-                        <p style="color: #888; font-size: 0.9em; padding: 40px;">
-                            🚀 Sistema de especiais em breve!<br>
-                            Aqui você poderá equipar habilidades especiais desbloqueáveis.
-                        </p>
+                    <div class="specials-grid" id="specialsGrid">
+                        <!-- Cards gerados dinamicamente -->
                     </div>
                 </div>
             </div>
@@ -49,15 +289,23 @@ const CustomizeHUD = (function () {
                 <span class="label">Melhor Score:</span>
                 <span id="bestScore" class="value">0</span>
             </div>
+            <div class="total-score">
+                <span class="label">Score Total:</span>
+                <span id="totalScore" class="value">0</span>
+            </div>
             <div class="selected-ship">
-                <span class="label">Nave Selecionada:</span>
+                <span class="label">Nave:</span>
                 <span id="selectedShipName" class="value">PIONEER-X1</span>
+            </div>
+            <div class="selected-special">
+                <span class="label">Especial:</span>
+                <span id="selectedSpecialName" class="value">Shockwave</span>
             </div>
         </div>
 
-        <!-- Tooltip para informações das naves -->
+        <!-- Tooltip Universal -->
         <div id="shipTooltip" class="ship-tooltip">
-            <div class="tooltip-content">Passe o mouse sobre uma nave para ver detalhes</div>
+            <div class="tooltip-content">Passe o mouse sobre um item para ver detalhes</div>
         </div>
 
         <!-- Botões -->
@@ -69,10 +317,8 @@ const CustomizeHUD = (function () {
     </div>
 </div>`;
 
-            // Adicionar HTML ao body usando jQuery
             $('body').append(html);
 
-            // Carregar CSS usando jQuery
             $('<link>', {
                 rel: 'stylesheet',
                 href: 'interfaces/css/customize.css'
@@ -80,49 +326,34 @@ const CustomizeHUD = (function () {
 
             isLoaded = true;
 
-            // Gerar cards das naves dinamicamente ANTES de configurar eventos
-            generateShipCards();
-            
-            // Configurar eventos DEPOIS de gerar os cards
-            setupEvents();
+            // Gerar cards usando os componentes
+            generateAllCards();
+            setupUniversalEvents();
         } catch (error) {
             console.error('Erro ao carregar tela de personalização:', error);
         }
     }
 
-    function generateShipCards() {
-        const $grid = $('#shipsGrid');
-        
-        if ($grid.length === 0) {
-            console.error('Grid de naves não encontrado!');
-            return;
-        }
-        
-        $grid.empty();
-
+    function generateAllCards() {
+        // Gerar cards de naves
         const allShips = GameData.getAllShips();
-        
-        allShips.forEach(ship => {
-            const isUnlocked = ProgressionSystem.isShipUnlocked(ship.id);
-            const statusClass = isUnlocked ? 'unlocked' : 'locked';
-            const statusText = isUnlocked ? 'DESBLOQUEADA' : 'BLOQUEADO';
-            
-            const $card = $(`
-                <div class="ship-card ${statusClass}" data-ship="${ship.id}">
-                    <div class="ship-preview">
-                        <img src="${ship.sprite}" alt="${ship.name}" class="ship-image">
-                    </div>
-                    <div class="ship-name">${ship.name}</div>
-                    <div class="ship-status ${statusClass}">${statusText}</div>
-                </div>
-            `);
-            
-            $grid.append($card);
-        });
+        shipComponent.generateCards(
+            allShips,
+            ProgressionSystem.isShipUnlocked,
+            ProgressionSystem.getSelectedShip
+        );
+
+        // Gerar cards de especiais
+        const allSpecials = GameData.getAllSpecials();
+        specialComponent.generateCards(
+            allSpecials,
+            ProgressionSystem.isSpecialUnlocked,
+            ProgressionSystem.getSelectedSpecial
+        );
     }
 
-    function setupEvents() {
-        // Usar delegação de eventos no documento para garantir que funcionem
+    function setupUniversalEvents() {
+        // Botão voltar
         $(document).off('click', '#backToMenuBtn').on('click', '#backToMenuBtn', function () {
             hide();
             if (typeof StartScreenHUD !== 'undefined') {
@@ -130,48 +361,64 @@ const CustomizeHUD = (function () {
             }
         });
 
-        // Eventos dos cards das naves usando delegação no documento
-        $(document).off('click', '.ship-card').on('click', '.ship-card', function (e) {
-            // Não fazer nada se clicou no botão de seleção
-            if ($(e.target).hasClass('select-ship-btn')) {
-                return;
-            }
-            
-            const shipId = $(this).data('ship');
-            
-            // Remover classe 'viewing' de todos os cards
-            $('.ship-card').removeClass('viewing');
-            
-            // Adicionar classe 'viewing' ao card clicado
-            $(this).addClass('viewing');
-            
-            showShipTooltip(shipId);
-        });
-
-        // Tooltip hover usando delegação no documento
-        $(document).off('mouseenter mouseleave', '.ship-card');
-        
-        $(document).on('mouseenter', '.ship-card', function () {
-            const shipId = $(this).data('ship');
-            showShipTooltip(shipId);
-        });
-
-        $(document).on('mouseleave', '.ship-card', function () {
-            // Não fazer nada - manter o estado visual
-        });
+        // Eventos universais de cards
+        setupCardEvents('ship');
+        setupCardEvents('special');
 
         // Tab switching
         $(document).off('click', '.tab-button').on('click', '.tab-button', function () {
             const tabName = $(this).data('tab');
             switchTab(tabName);
         });
+    }
 
-        // Evento do botão SELECIONAR usando delegação
-        $(document).off('click', '.select-ship-btn').on('click', '.select-ship-btn', function (e) {
+    function setupCardEvents(type) {
+        const cardClass = `.${type}-card`;
+        const btnClass = `.select-${type}-btn`;
+
+        // Click nos cards
+        $(document).off('click', cardClass).on('click', cardClass, function (e) {
+            if ($(e.target).hasClass(`select-${type}-btn`)) {
+                return;
+            }
+            
+            const itemId = $(this).data(type);
+            
+            // Remover classe 'viewing' de todos os cards
+            $('.ship-card, .special-card').removeClass('viewing');
+            
+            // Adicionar classe 'viewing' ao card clicado
+            $(this).addClass('viewing');
+            
+            // Mostrar tooltip apropriado
+            if (type === 'ship') {
+                TooltipManager.showShipTooltip(itemId);
+            } else {
+                TooltipManager.showSpecialTooltip(itemId);
+            }
+        });
+
+        // Hover nos cards
+        $(document).on('mouseenter', cardClass, function () {
+            const itemId = $(this).data(type);
+            if (type === 'ship') {
+                TooltipManager.showShipTooltip(itemId);
+            } else {
+                TooltipManager.showSpecialTooltip(itemId);
+            }
+        });
+
+        // Botões de seleção
+        $(document).off('click', btnClass).on('click', btnClass, function (e) {
             e.stopPropagation();
             e.preventDefault();
-            const selectedShipId = parseInt($(this).data('ship-id'));
-            selectShip(selectedShipId);
+            const selectedId = parseInt($(this).data(`${type}-id`));
+            
+            if (type === 'ship') {
+                selectShip(selectedId);
+            } else {
+                selectSpecial(selectedId);
+            }
         });
     }
 
@@ -183,152 +430,83 @@ const CustomizeHUD = (function () {
         // Update tab content
         $('.tab-content').removeClass('active');
         $(`#tab-${tabName}`).addClass('active');
-    }
 
-    function showShipTooltip(shipId) {
-        const ship = GameData.getShipById(shipId);
-        if (!ship) {
-            console.error('Nave não encontrada:', shipId);
-            return;
+        // Atualizar tooltip baseado na aba ativa
+        if (tabName === 'especiais') {
+            const selectedSpecial = ProgressionSystem.getSelectedSpecial();
+            $('.ship-card, .special-card').removeClass('viewing');
+            $(`.special-card[data-special="${selectedSpecial}"]`).addClass('viewing');
+            TooltipManager.showSpecialTooltip(selectedSpecial);
+        } else {
+            const selectedShip = ProgressionSystem.getSelectedShip();
+            $('.ship-card, .special-card').removeClass('viewing');
+            $(`.ship-card[data-ship="${selectedShip}"]`).addClass('viewing');
+            TooltipManager.showShipTooltip(selectedShip);
         }
-
-        const isUnlocked = ProgressionSystem.isShipUnlocked(shipId);
-
-        // Função para criar barras de atributos
-        function createAttributeBar(value, maxValue = 5) {
-            // Garantir que value não ultrapasse maxValue
-            const clampedValue = Math.min(value, maxValue);
-            const filled = '★'.repeat(clampedValue);
-            const empty = '☆'.repeat(Math.max(0, maxValue - clampedValue));
-            return filled + empty;
-        }
-
-        // Obter informações de desbloqueio
-        let unlockInfo = '';
-        if (!isUnlocked) {
-            const unlockLabel = GameData.UNLOCK_TYPE_LABELS[ship.unlockType];
-            const requirement = GameData.formatUnlockRequirement(ship.unlockType, ship.unlockRequirement);
-
-            // Mostrar progresso atual
-            let currentProgress = '';
-            switch (ship.unlockType) {
-                case 'highScore':
-                    currentProgress = `Seu melhor: ${ProgressionSystem.getBestScore()}`;
-                    break;
-                case 'totalScore':
-                    currentProgress = `Seu total: ${ProgressionSystem.getTotalScore()}`;
-                    break;
-                case 'playTime':
-                    const playTime = ProgressionSystem.getPlayTime();
-                    const mins = Math.floor(playTime / 60);
-                    const secs = playTime % 60;
-                    currentProgress = `Seu tempo: ${mins}m ${secs}s`;
-                    break;
-            }
-
-            unlockInfo = `<div class="tooltip-unlock-info" style="margin-top: 10px;">
-                <div style="color: #ff6666; margin-bottom: 5px;">🔒 ${unlockLabel}: ${requirement}</div>
-                <div style="color: #aaa; font-size: 0.85em;">${currentProgress}</div>
-            </div>`;
-        }
-
-        let tooltipContent = `<div class="tooltip-ship-name">${ship.name}</div>
-                            <div class="tooltip-description">${ship.description}</div>
-                            <div class="tooltip-attributes">
-                                <div>🚀 Manobrabilidade: ${createAttributeBar(ship.attributes.maneuverability, 6)}</div>
-                                <div>🛡️ Resistência: ${createAttributeBar(ship.attributes.resistance, 4)} (${ship.attributes.resistance} hits)</div>
-                                <div>🔥 Cadência: ${createAttributeBar(ship.attributes.fireRate, 6)}</div>
-                            </div>
-                            ${unlockInfo}
-                            <div class="tooltip-status ${isUnlocked ? 'available' : 'locked'}">
-                                ${isUnlocked ? `<button class="select-ship-btn" data-ship-id="${shipId}">SELECIONAR</button>` : 'BLOQUEADO'}
-                            </div>`;
-
-        updateTooltip(tooltipContent);
-    }
-
-    function showSelectedShipTooltip() {
-        const selectedShip = ProgressionSystem.getSelectedShip();
-        showShipTooltip(selectedShip);
     }
 
     function selectShip(shipId) {
-        // Verificar se a nave está desbloqueada
         if (!ProgressionSystem.isShipUnlocked(shipId)) {
             showNotification('Esta nave ainda está bloqueada!');
             return;
         }
         
-        // Remover classe 'selected' de todos os cards
         $('.ship-card').removeClass('selected');
-
-        // Adicionar classe 'selected' ao card escolhido (glow verde)
         $(`.ship-card[data-ship="${shipId}"]`).addClass('selected');
 
-        // Salvar seleção
         ProgressionSystem.setSelectedShip(shipId);
-
-        // Atualizar UI
         updateSelectedShipDisplay();
 
-        // Feedback visual
         const ship = GameData.getShipById(shipId);
         showNotification(`${ship ? ship.name : 'Nave'} selecionada!`);
-        
-        // Atualizar tooltip para mostrar a nave selecionada
-        showShipTooltip(shipId);
+        TooltipManager.showShipTooltip(shipId);
     }
 
-    function showUnlockMessage(shipId) {
-        const ship = GameData.getShipById(shipId);
-        if (!ship) return;
-
-        const unlockLabel = GameData.UNLOCK_TYPE_LABELS[ship.unlockType];
-        const requirement = GameData.formatUnlockRequirement(ship.unlockType, ship.unlockRequirement);
-
-        showNotification(`${ship.name} bloqueada! Requisito: ${unlockLabel} - ${requirement}`);
-    }
-
-    function updateTooltip(htmlContent) {
-        const $tooltip = $('#shipTooltip');
-        if ($tooltip.length === 0) {
-            console.error('Tooltip não encontrado no DOM!');
+    function selectSpecial(specialId) {
+        if (specialId !== 0 && !ProgressionSystem.isSpecialUnlocked(specialId)) {
+            showNotification('Este especial ainda está bloqueado!');
             return;
         }
         
-        const $content = $tooltip.find('.tooltip-content');
-        if ($content.length === 0) {
-            console.error('tooltip-content não encontrado!');
-            return;
+        $('.special-card').removeClass('selected');
+        $(`.special-card[data-special="${specialId}"]`).addClass('selected');
+
+        ProgressionSystem.setSelectedSpecial(specialId);
+        updateSelectedSpecialDisplay();
+
+        let specialName;
+        if (specialId === 0) {
+            specialName = 'Shockwave';
+        } else {
+            const special = GameData.getSpecialById(specialId);
+            specialName = special ? special.name : 'Especial';
         }
         
-        $content.html(htmlContent);
+        showNotification(`${specialName} selecionado!`);
+        TooltipManager.showSpecialTooltip(specialId);
     }
 
-    function resetTooltip() {
-        // Ao invés de mostrar mensagem genérica, mostra a nave selecionada
-        showSelectedShipTooltip();
-    }
-
-    function initializeTooltip() {
-        const $tooltip = $('#shipTooltip');
-        // Garantir que o tooltip esteja sempre visível
-        $tooltip.css({
-            display: 'block',
-            opacity: 1
-        });
-        
-        // Marcar a nave selecionada como 'viewing' ao abrir
+    function updateSelectedShipDisplay() {
         const selectedShip = ProgressionSystem.getSelectedShip();
-        $('.ship-card').removeClass('viewing');
-        $(`.ship-card[data-ship="${selectedShip}"]`).addClass('viewing');
+        const ship = GameData.getShipById(selectedShip);
+        $('#selectedShipName').text(ship ? ship.name : 'PIONEER-X1');
+    }
+
+    function updateSelectedSpecialDisplay() {
+        const selectedSpecialId = ProgressionSystem.getSelectedSpecial();
+        let specialName;
         
-        // Mostrar nave selecionada por padrão
-        showSelectedShipTooltip();
+        if (selectedSpecialId === 0) {
+            specialName = 'Shockwave';
+        } else {
+            const special = GameData.getSpecialById(selectedSpecialId);
+            specialName = special ? special.name : 'Shockwave';
+        }
+        
+        $('#selectedSpecialName').text(specialName);
     }
 
     function showNotification(message) {
-        // Criar notificação temporária
         const $notification = $('<div>', {
             text: message,
             css: {
@@ -350,79 +528,64 @@ const CustomizeHUD = (function () {
 
         $('body').append($notification);
 
-        // Animação de entrada
-        setTimeout(() => {
-            $notification.css('opacity', '1');
-        }, 10);
-
-        // Remover após 2 segundos
+        setTimeout(() => $notification.css('opacity', '1'), 10);
         setTimeout(() => {
             $notification.css('opacity', '0');
-            setTimeout(() => {
-                $notification.remove();
-            }, 300);
+            setTimeout(() => $notification.remove(), 300);
         }, 2000);
     }
 
     function updateUI() {
-        const selectedShip = ProgressionSystem.getSelectedShip();
-
-        // Atualizar melhor score
+        // Atualizar scores
         $('#bestScore').text(ProgressionSystem.getBestScore());
+        $('#totalScore').text(ProgressionSystem.getTotalScore());
 
-        // Atualizar status das naves
-        $('.ship-card').each(function () {
-            const $card = $(this);
-            const shipId = $card.data('ship');
-            const $status = $card.find('.ship-status');
+        // Atualizar estados dos cards usando os componentes
+        const allShips = GameData.getAllShips();
+        shipComponent.updateCardStates(
+            allShips,
+            ProgressionSystem.isShipUnlocked,
+            ProgressionSystem.getSelectedShip
+        );
 
-            const isUnlocked = ProgressionSystem.isShipUnlocked(shipId);
+        const allSpecials = GameData.getAllSpecials();
+        specialComponent.updateCardStates(
+            allSpecials,
+            ProgressionSystem.isSpecialUnlocked,
+            ProgressionSystem.getSelectedSpecial
+        );
 
-            if (isUnlocked) {
-                $card.removeClass('locked').addClass('unlocked');
-                $status.removeClass('locked').addClass('unlocked').text('DESBLOQUEADA');
-            } else {
-                $card.removeClass('unlocked').addClass('locked');
-                $status.removeClass('unlocked').addClass('locked').text('BLOQUEADO');
-            }
-
-            // Marcar nave selecionada
-            if (shipId == selectedShip) {
-                $card.addClass('selected');
-            } else {
-                $card.removeClass('selected');
-            }
-        });
-
-        // Atualizar nome da nave selecionada
+        // Atualizar displays
         updateSelectedShipDisplay();
+        updateSelectedSpecialDisplay();
     }
 
-    function updateSelectedShipDisplay() {
-        const selectedShip = ProgressionSystem.getSelectedShip();
-        const ship = GameData.getShipById(selectedShip);
-        $('#selectedShipName').text(ship ? ship.name : 'PIONEER-X1');
+    function initializeTooltip() {
+        const activeTab = $('.tab-button.active').data('tab');
+        
+        if (activeTab === 'especiais') {
+            const selectedSpecial = ProgressionSystem.getSelectedSpecial();
+            $('.ship-card, .special-card').removeClass('viewing');
+            $(`.special-card[data-special="${selectedSpecial}"]`).addClass('viewing');
+            TooltipManager.showSpecialTooltip(selectedSpecial);
+        } else {
+            const selectedShip = ProgressionSystem.getSelectedShip();
+            $('.ship-card, .special-card').removeClass('viewing');
+            $(`.ship-card[data-ship="${selectedShip}"]`).addClass('viewing');
+            TooltipManager.showShipTooltip(selectedShip);
+        }
     }
 
     function show() {
         loadHTML();
 
-        // Aguardar um pouco para garantir que o DOM foi atualizado
         setTimeout(() => {
-            // Atualizar UI com dados atuais
             updateUI();
-
-            // Inicializar tooltip
             initializeTooltip();
 
             const $overlay = $('#customizeOverlay');
             if ($overlay.length) {
-                $overlay.css({
-                    display: 'flex',
-                    opacity: 0
-                });
-
-                // Animação de entrada usando jQuery
+                $overlay.css({ display: 'flex', opacity: 0 });
                 setTimeout(() => {
                     $overlay.css({
                         transition: 'opacity 0.3s ease',

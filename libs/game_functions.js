@@ -61,10 +61,11 @@ const GameFunctions = (function () {
 
     // Tipos de powerups (tamanhos base)
     const POWERUP_TYPES = {
-        DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Tiro Duplo' },
-        TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Tiro Triplo' },
-        PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Tiro Perfurante' },
-        EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Vida Extra' }
+        DOUBLE_SHOT: { color: '#ff4444', baseSize: 25, name: 'Double Shot' },
+        TRIPLE_SHOT: { color: '#44ff44', baseSize: 25, name: 'Triple Shot' },
+        PIERCING_SHOT: { color: '#4444ff', baseSize: 25, name: 'Piercing Shot' },
+        SPLASH_SHOT: { color: '#00ff88', baseSize: 25, name: 'Splash Shot' },
+        EXTRA_LIFE: { color: '#ffff44', baseSize: 30, name: 'Health' }
     };
 
     // SISTEMA DE ATRIBUTOS DAS NAVES
@@ -88,6 +89,21 @@ const GameFunctions = (function () {
             maneuverability: 4,
             resistance: 2,
             fireRate: 5
+        },
+        5: { // AQUA-STORM
+            maneuverability: 5,
+            resistance: 3,
+            fireRate: 4
+        },
+        6: { // NEBULA-HUNTER
+            maneuverability: 4,
+            resistance: 4,
+            fireRate: 5
+        },
+        7: { // GOLDEN-PHOENIX
+            maneuverability: 10,
+            resistance: 10,
+            fireRate: 10
         }
     };
 
@@ -99,7 +115,11 @@ const GameFunctions = (function () {
     // SISTEMA DE ESPECIAL (SHOCKWAVE)
     let specialCooldown = 0; // Tempo restante para usar especial (0 = disponível)
     const SPECIAL_COOLDOWN_TIME = 5.0; // 5 segundos para recarregar
-    const SHOCKWAVE_BULLETS = 16; // Número de tiros na onda
+    const SHOCKWAVE_BULLETS = 48; // Número de tiros na onda
+    
+    // SISTEMA DE ESPECIAIS DESBLOQUEÁVEIS
+    let currentSpecialType = 'shockwave'; // Tipo atual do especial
+    let currentSpecialCooldown = SPECIAL_COOLDOWN_TIME; // Cooldown atual baseado no especial selecionado
     // FIM: VARIÁVEIS GLOBAIS DO JOGO.
 
     // INÍCIO: IMPORTAÇÃO DOS SPRITES.
@@ -119,9 +139,28 @@ const GameFunctions = (function () {
         hitsRemaining = currentShipAttributes.resistance; // Reset hits
     }
 
+    // Função para carregar especial selecionado
+    function loadSelectedSpecial() {
+        const selectedSpecialId = ProgressionSystem.getSelectedSpecial();
+        if (selectedSpecialId === 0) {
+            currentSpecialType = 'shockwave'; // Especial padrão
+            currentSpecialCooldown = SPECIAL_COOLDOWN_TIME;
+        } else {
+            const special = GameData.getSpecialById(selectedSpecialId);
+            if (special) {
+                currentSpecialType = special.name.toLowerCase().replace(' ', '_'); // 'big_shot'
+                currentSpecialCooldown = special.cooldown;
+            } else {
+                currentSpecialType = 'shockwave';
+                currentSpecialCooldown = SPECIAL_COOLDOWN_TIME;
+            }
+        }
+    }
+
     // Carregar sprite e atributos iniciais
     loadSelectedShipSprite();
     loadSelectedShipAttributes();
+    loadSelectedSpecial();
 
     // SPRITES DOS ASTEROIDES
     const asteroidSprites = [
@@ -137,6 +176,16 @@ const GameFunctions = (function () {
     const bulletSprite = new Image();
     bulletSprite.src = "assets/sprites/bullet.png";
 
+    // SPRITES DAS BALAS ESPECIAIS
+    const piercingBulletSprite = new Image();
+    piercingBulletSprite.src = "assets/sprites/bullet-piercing-shot.png";
+
+    const splashBulletSprite = new Image();
+    splashBulletSprite.src = "assets/sprites/bullet-splash-shot.png";
+
+    const bigShotBulletSprite = new Image();
+    bigShotBulletSprite.src = "assets/sprites/bullet-big-shot.png";
+
     // SPRITES DOS POWERUPS
     const healthPowerupSprite = new Image();
     healthPowerupSprite.src = "assets/sprites/powerup-health.png";
@@ -149,6 +198,9 @@ const GameFunctions = (function () {
 
     const piercingShotPowerupSprite = new Image();
     piercingShotPowerupSprite.src = "assets/sprites/powerup-piercing-shot.png";
+
+    const splashShotPowerupSprite = new Image();
+    splashShotPowerupSprite.src = "assets/sprites/powerup-splash-shot.png";
 
     // SISTEMA DE BACKGROUNDS DINÂMICOS
     const bgImage = new Image();
@@ -253,15 +305,15 @@ const GameFunctions = (function () {
     }
 
     function getFireRateCooldown() {
-        // Mapear fireRate (1-6) para cooldown em segundos
-        // fireRate 1 = 0.50s (lento)
-        // fireRate 3 = 0.35s (médio)
-        // fireRate 6 = 0.20s (rápido)
         const fireRate = currentShipAttributes.fireRate;
         
-        // Fórmula: cooldown diminui linearmente com fireRate
-        // 0.50 - (fireRate - 1) * 0.06
-        return 0.50 - ((fireRate - 1) * 0.06);
+        // Fórmula linear: interpolar entre 0.60s e 0.03s
+        // cooldown = 0.60 - ((fireRate - 1) / 9) * (0.60 - 0.03)
+        const minCooldown = 0.05; // 50ms para fireRate 10
+        const maxCooldown = 0.60; // 600ms para fireRate 1
+        const range = maxCooldown - minCooldown; // 0.57s
+        
+        return maxCooldown - ((fireRate - 1) / 9) * range;
     }
 
 
@@ -288,6 +340,14 @@ const GameFunctions = (function () {
             // Pause só dispara no keydown
             if (e.key === KEY_PAUSE) {
                 console.log('ESC pressionado - gameState:', gameState);
+                
+                // PROTEÇÃO EXTRA: Verificar se PauseHUD está visível mas não deveria estar
+                if (typeof PauseHUD !== 'undefined' && gameState === 'menu') {
+                    console.log('PauseHUD detectado no menu - destruindo');
+                    PauseHUD.destroy();
+                    return;
+                }
+                
                 togglePause();
             }
         });
@@ -472,7 +532,27 @@ const GameFunctions = (function () {
                     radius: piercingRadius,
                     type: 'piercing',
                     color: '#4444ff',
-                    piercing: true
+                    piercing: true,
+                    useSprite: true,
+                    angle: ship.angle,
+                    customSprite: 'piercing'
+                });
+                break;
+
+            case 'splash':
+                // Tiro splash (verde, spawna tiros secundários ao acertar)
+                bullets.push({
+                    x: ship.x,
+                    y: ship.y,
+                    velocityX: baseVelX,
+                    velocityY: baseVelY,
+                    radius: bulletRadius,
+                    type: 'splash',
+                    color: '#00ff88',
+                    splash: true,
+                    useSprite: true,
+                    angle: ship.angle,
+                    customSprite: 'splash'
                 });
                 break;
 
@@ -497,10 +577,54 @@ const GameFunctions = (function () {
         }
     }
 
-    function useSpecial() {
-        // Ativar cooldown
-        specialCooldown = SPECIAL_COOLDOWN_TIME;
+    function spawnSplashBullets(x, y) {
+        // Spawnar 3 tiros em direções aleatórias
+        const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale * 0.8; // Um pouco mais lento que tiros normais
+        const bulletRadius = 4 * scale;
 
+        for (let i = 0; i < 5; i++) {
+            // Ângulo aleatório em qualquer direção (0 a 2π radianos)
+            const randomAngle = Math.random() * Math.PI * 2;
+            
+            // Calcular velocidade baseada no ângulo
+            // Usar sin/cos corretamente para a direção
+            const velocityX = Math.sin(randomAngle) * scaledBulletSpeed;
+            const velocityY = -Math.cos(randomAngle) * scaledBulletSpeed;
+            
+            bullets.push({
+                x: x,
+                y: y,
+                velocityX: velocityX,
+                velocityY: velocityY,
+                radius: bulletRadius,
+                type: 'splash-secondary',
+                color: '#00ff88',
+                useSprite: true,
+                angle: randomAngle, // Ângulo para rotação do sprite
+                isSecondary: true, // Marca como secundário para não spawnar mais splash
+                splash: false, // Tiros secundários não spawnam mais tiros
+                customSprite: 'splash'
+            });
+        }
+    }
+
+    function useSpecial() {
+        // Ativar cooldown baseado no especial atual
+        specialCooldown = currentSpecialCooldown;
+
+        switch (currentSpecialType) {
+            case 'big_shot':
+                useBigShot();
+                break;
+            case 'shockwave':
+            default:
+                useShockwave();
+                break;
+        }
+    }
+
+    function useShockwave() {
         // Criar shockwave - onda de tiros em todas as direções
         const angleStep = (Math.PI * 2) / SHOCKWAVE_BULLETS; // Dividir 360° pelos tiros
         const scale = getGameScale();
@@ -527,8 +651,35 @@ const GameFunctions = (function () {
         if (typeof SoundEffectsManager !== 'undefined') {
             SoundEffectsManager.playShoot('shockwave');
         }
+    }
 
-        console.log('ESPECIAL: Shockwave ativado!'); // Feedback temporário
+    function useBigShot() {
+        // Criar BIG SHOT - bala gigante que mata qualquer asteroide
+        const scale = getGameScale();
+        const scaledBulletSpeed = BULLET_SPEED * scale * 0.8; // Um pouco mais lento
+        const bigBulletRadius = 25 * scale; // 10x maior que bala normal
+        
+        const baseVelX = Math.sin(ship.angle) * scaledBulletSpeed;
+        const baseVelY = -Math.cos(ship.angle) * scaledBulletSpeed;
+
+        bullets.push({
+            x: ship.x,
+            y: ship.y,
+            velocityX: baseVelX,
+            velocityY: baseVelY,
+            radius: bigBulletRadius,
+            type: 'big_shot',
+            color: '#ff6600', // Laranja forte
+            oneHitKill: true, // Mata qualquer asteroide em 1 hit
+            useSprite: true, // Usar sprite do Big Shot
+            angle: ship.angle,
+            customSprite: 'big_shot'
+        });
+
+        // Tocar som especial
+        if (typeof SoundEffectsManager !== 'undefined') {
+            SoundEffectsManager.playShoot('big_shot');
+        }
     }
 
     function SpawnAsteroid() {
@@ -703,6 +854,12 @@ const GameFunctions = (function () {
                 showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
                 break;
 
+            case 'SPLASH_SHOT':
+                currentAmmoType = 'splash';
+                ammoTimer = SPECIAL_AMMO_DURATION;
+                showPowerupMessage(`${powerup.name} ativado! (${SPECIAL_AMMO_DURATION}s)`);
+                break;
+
             case 'EXTRA_LIFE':
                 lives++;
                 showPowerupMessage(`${powerup.name}! Vidas: ${lives}`);
@@ -711,8 +868,7 @@ const GameFunctions = (function () {
     }
 
     function showPowerupMessage(message) {
-        // Criar notificação temporária na tela
-        console.log(`POWERUP: ${message}`); // Temporário - depois pode ser uma UI visual
+        console.log(`POWERUP: ${message}`);
     }
 
     function updateAmmoTimer(deltaTime) {
@@ -729,14 +885,13 @@ const GameFunctions = (function () {
         if (specialCooldown > 0) {
             specialCooldown -= deltaTime;
             if (specialCooldown < 0) {
-                specialCooldown = 0; // Garantir que não fique negativo
+                specialCooldown = 0;
             }
         }
     }
 
 
     function SpawnInitialAsteroids() {
-        // Spawnar asteroides até atingir o máximo inicial (3)
         while (asteroids.length < BASE_MAX_ASTEROIDS) {
             SpawnAsteroid();
         }
@@ -872,9 +1027,21 @@ const GameFunctions = (function () {
                 const dy = a.y - b.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 if (distance < a.radius + b.radius && a.hitCooldown <= 0) {
-                    // Reduzir vida do asteroide
-                    a.currentHealth--;
+                    // Verificar se é um tiro que mata em 1 hit
+                    if (b.oneHitKill) {
+                        // Big Shot mata instantaneamente
+                        a.currentHealth = 0;
+                    } else {
+                        // Reduzir vida do asteroide normalmente
+                        a.currentHealth--;
+                    }
+                    
                     a.hitCooldown = 0.1; // Cooldown de 0.1 segundos para evitar múltiplos hits
+
+                    // Se for splash shot, spawnar tiros secundários
+                    if (b.splash && !b.isSecondary) {
+                        spawnSplashBullets(b.x, b.y);
+                    }
 
                     // Remove tiro apenas se não for perfurante
                     if (!b.piercing) {
@@ -1013,7 +1180,14 @@ const GameFunctions = (function () {
         // Recarregar sprite e atributos da nave selecionada
         loadSelectedShipSprite();
         loadSelectedShipAttributes();
+        loadSelectedSpecial();
         resetGame();
+        
+        // RESETAR tempo da sessão ao iniciar nova partida
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+        }
+        
         // Mostrar botão de pause quando jogo inicia
         if (typeof AudioUI !== 'undefined') {
             AudioUI.showPauseButton();
@@ -1029,7 +1203,14 @@ const GameFunctions = (function () {
         // Recarregar sprite e atributos da nave selecionada
         loadSelectedShipSprite();
         loadSelectedShipAttributes();
+        loadSelectedSpecial();
         resetGame();
+        
+        // RESETAR tempo da sessão ao reiniciar partida
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+        }
+        
         // Mostrar botão de pause quando jogo reinicia
         if (typeof AudioUI !== 'undefined') {
             AudioUI.showPauseButton();
@@ -1059,6 +1240,10 @@ const GameFunctions = (function () {
         // CRÍTICO: Não permitir pause/resume se não estiver em jogo
         if (gameState !== 'playing' && gameState !== 'paused') {
             console.log('Pause bloqueado - gameState:', gameState);
+            // GARANTIR que PauseHUD está escondido se não estamos em jogo
+            if (typeof PauseHUD !== 'undefined') {
+                PauseHUD.forceHide();
+            }
             return;
         }
 
@@ -1077,6 +1262,7 @@ const GameFunctions = (function () {
         console.log('gameState antes:', gameState);
         
         // CRÍTICO: Setar gameState PRIMEIRO para parar update/draw imediatamente
+        const previousState = gameState;
         gameState = 'menu';
         
         console.log('gameState depois:', gameState);
@@ -1084,13 +1270,15 @@ const GameFunctions = (function () {
         // Resetar lastFrameTime para evitar delta time incorreto
         lastFrameTime = 0;
 
-        // CRÍTICO: Forçar esconder pause IMEDIATAMENTE (múltiplas vezes para garantir)
+        // DESCARTAR tempo da sessão atual (não salvar)
+        if (typeof ProgressionSystem !== 'undefined') {
+            ProgressionSystem.resetSessionTime();
+            console.log('⚠️ Sessão descartada (voltou ao menu sem finalizar)');
+        }
+
+        // CRÍTICO: Destruir completamente o PauseHUD
         if (typeof PauseHUD !== 'undefined') {
-            PauseHUD.forceHide();
-            // Chamar novamente após um pequeno delay para garantir
-            setTimeout(() => {
-                PauseHUD.forceHide();
-            }, 100);
+            PauseHUD.destroy();
         }
 
         // Esconder outras interfaces
@@ -1124,6 +1312,8 @@ const GameFunctions = (function () {
 
         // Tocar música do menu (forçar restart porque estamos voltando do jogo)
         AudioManager.playMenuMusic(true);
+        
+        console.log('=== BACK TO MENU CONCLUÍDO ===');
     }
 
     function resetGame() {
@@ -1245,8 +1435,8 @@ const GameFunctions = (function () {
         // Verificar disparo contínuo (se barra de espaço está pressionada)
         updateShooting(currentTime);
 
-        // Adicionar tempo de jogo ao ProgressionSystem
-        if (typeof ProgressionSystem !== 'undefined') {
+        // Adicionar tempo de jogo ao ProgressionSystem (APENAS quando está jogando)
+        if (typeof ProgressionSystem !== 'undefined' && gameState === 'playing') {
             ProgressionSystem.addPlayTime(clampedDeltaTime);
         }
 
@@ -1365,26 +1555,47 @@ const GameFunctions = (function () {
 
         // TIROS
         bullets.forEach(b => {
-            if (b.useSprite && bulletSprite.complete) {
-                // Usar sprite para tiros normais, duplos e triplos
-                ctx.save();
-                ctx.translate(b.x, b.y);
-                ctx.rotate(b.angle);
+            if (b.useSprite) {
+                // Determinar qual sprite usar
+                let currentBulletSprite = bulletSprite; // padrão
+                
+                if (b.customSprite === 'piercing' && piercingBulletSprite.complete) {
+                    currentBulletSprite = piercingBulletSprite;
+                } else if (b.customSprite === 'splash' && splashBulletSprite.complete) {
+                    currentBulletSprite = splashBulletSprite;
+                } else if (b.customSprite === 'big_shot' && bigShotBulletSprite.complete) {
+                    currentBulletSprite = bigShotBulletSprite;
+                }
+                
+                if (currentBulletSprite.complete) {
+                    ctx.save();
+                    ctx.translate(b.x, b.y);
+                    ctx.rotate(b.angle);
 
-                // Tamanho do sprite da bala (responsivo)
-                const scale = getGameScale();
-                const bulletWidth = 8 * scale;
-                const bulletHeight = 16 * scale;
+                    // Tamanho do sprite da bala (responsivo)
+                    const scale = getGameScale();
+                    let bulletWidth = 8 * scale;
+                    let bulletHeight = 16 * scale;
+                    
+                    // Ajustar tamanho para tiros especiais
+                    if (b.customSprite === 'piercing') {
+                        bulletWidth *= 1.5; // Tiro piercing é maior
+                        bulletHeight *= 1.5;
+                    } else if (b.customSprite === 'big_shot') {
+                        bulletWidth *= 3.0; // Big Shot é muito maior
+                        bulletHeight *= 3.0;
+                    }
 
-                ctx.drawImage(
-                    bulletSprite,
-                    -bulletWidth / 2,
-                    -bulletHeight / 2,
-                    bulletWidth,
-                    bulletHeight
-                );
+                    ctx.drawImage(
+                        currentBulletSprite,
+                        -bulletWidth / 2,
+                        -bulletHeight / 2,
+                        bulletWidth,
+                        bulletHeight
+                    );
 
-                ctx.restore();
+                    ctx.restore();
+                }
             } else {
                 // Fallback para círculo (tiro perfurante e caso sprite não carregue)
                 ctx.fillStyle = b.color || 'red';
@@ -1422,6 +1633,9 @@ const GameFunctions = (function () {
                 case 'PIERCING_SHOT':
                     powerupSprite = piercingShotPowerupSprite;
                     break;
+                case 'SPLASH_SHOT':
+                    powerupSprite = splashShotPowerupSprite;
+                    break;
             }
 
             if (powerupSprite && powerupSprite.complete) {
@@ -1445,6 +1659,25 @@ const GameFunctions = (function () {
                 ctx.lineWidth = 2;
                 ctx.stroke();
             }
+
+            // Desenhar nome do powerup embaixo do sprite
+            const scale = getGameScale();
+            const fontSize = Math.max(10, 12 * scale); // Tamanho responsivo
+            ctx.font = `bold ${fontSize}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            
+            // Posição do texto (embaixo do sprite)
+            const textY = powerup.y + spriteSize / 2 + 5;
+            
+            // Outline preto para melhor legibilidade
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 3;
+            ctx.strokeText(powerup.name, powerup.x, textY);
+            
+            // Texto branco por cima
+            ctx.fillStyle = 'white';
+            ctx.fillText(powerup.name, powerup.x, textY);
 
             ctx.globalAlpha = 1; // Resetar alpha
         });
