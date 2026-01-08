@@ -153,7 +153,7 @@ const GameData = (function () {
             sprite: 'assets/sprites/special-bigshot.png',
             unlockType: 'totalScore',
             unlockRequirement: 1000,
-            cooldown: 3.0, // segundos
+            cooldown: 2.0, // segundos
             color: '#ff6600'
         }
     };
