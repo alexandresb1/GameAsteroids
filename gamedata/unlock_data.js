@@ -27,7 +27,7 @@ const GameData = (function () {
                 fireRate: 4
             },
             unlockType: 'highScore',
-            unlockRequirement: 200
+            unlockRequirement: 1000
         },
         3: {
             id: 3,
@@ -53,7 +53,7 @@ const GameData = (function () {
                 fireRate: 5
             },
             unlockType: 'playTime',
-            unlockRequirement: 60
+            unlockRequirement: 360
         },
         5: {
             id: 5,
@@ -65,7 +65,7 @@ const GameData = (function () {
                 resistance: 3,
                 fireRate: 4
             },
-            unlockType: 'totalScore',
+            unlockType: 'highScore',
             unlockRequirement: 3000
         },
         6: {
@@ -92,7 +92,7 @@ const GameData = (function () {
                 fireRate: 10
             },
             unlockType: 'totalScore',
-            unlockRequirement: 20000
+            unlockRequirement: 100000
         }
     };
 
