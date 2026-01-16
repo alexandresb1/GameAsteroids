@@ -2,23 +2,34 @@ const AudioManager = (function () {
     // Criar os objetos de áudio
     const menuTracks = [
         new Audio('audio/Main Menu 1.mp3'),
-        new Audio('audio/Main Menu 2.mp3')
+        new Audio('audio/Main Menu 2.mp3'),
+        new Audio('audio/Main Menu 3.mp3')
     ];
-    const gameMusic = new Audio('audio/Gameplay1.mp3');
+    
+    // Criar múltiplas faixas de gameplay (Gameplay 1.mp3 até Gameplay 6.mp3)
+    const gameplayTracks = [];
+    for (let i = 1; i <= 6; i++) {
+        gameplayTracks.push(new Audio(`audio/Gameplay ${i}.mp3`));
+    }
 
     // Configurações comuns
     menuTracks.forEach(track => {
-        track.loop = true;
+        track.loop = false;
         track.volume = 0.7;
     });
-    gameMusic.loop = true;
-    gameMusic.volume = 0.7;
+    
+    gameplayTracks.forEach(track => {
+        track.loop = false;
+        track.volume = 0.7;
+    });
 
     let currentTrack = null;
     let isMuted = true; // Começa mutado para evitar problemas de autoplay
     let userHasInteracted = false;
     let pendingTrack = null; // Para tocar depois da primeira interação
     let currentContext = null; // 'menu' ou 'game' - rastreia o contexto atual
+    let lastGameplayTrackIndex = -1; // Rastrear última música de gameplay para não repetir
+    let lastMenuTrackIndex = -1; // Rastrear última música de menu para não repetir
 
     // Detectar primeira interação do usuário
     function enableAudioOnFirstInteraction() {
@@ -60,32 +71,62 @@ const AudioManager = (function () {
     }
 
     function playMenuMusic(forceRestart = false) {
-        // Se já estamos no contexto do menu e não é para forçar restart, não fazer nada
-        if (currentContext === 'menu' && !forceRestart) {
-            console.log('Já estamos no menu, música continua tocando');
-            return Promise.resolve();
-        }
-
         // Marcar que estamos no contexto do menu
         currentContext = 'menu';
 
-        // Selecionar aleatoriamente entre as faixas de menu
-        const randomIndex = Math.floor(Math.random() * menuTracks.length);
+        // Selecionar uma faixa de menu aleatória que não seja a última tocada
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * menuTracks.length);
+        } while (randomIndex === lastMenuTrackIndex && menuTracks.length > 1);
+        
+        lastMenuTrackIndex = randomIndex;
         const selectedTrack = menuTracks[randomIndex];
-        console.log(`Tocando música do menu: ${randomIndex + 1}`);
+        
+        console.log(`Tocando música do menu: Main Menu ${randomIndex + 1}.mp3`);
+        
+        // Configurar para tocar a próxima música quando esta terminar
+        selectedTrack.onended = function() {
+            console.log('Música do menu terminou, tocando próxima...');
+            playMenuMusic(); // Recursivamente toca a próxima música
+        };
+        
         return playTrack(selectedTrack);
+    }
+
+    function getRandomGameplayTrack() {
+        // Selecionar uma faixa de gameplay aleatória que não seja a última tocada
+        let randomIndex;
+        do {
+            randomIndex = Math.floor(Math.random() * gameplayTracks.length);
+        } while (randomIndex === lastGameplayTrackIndex && gameplayTracks.length > 1);
+        
+        lastGameplayTrackIndex = randomIndex;
+        console.log(`Selecionada música de gameplay: Gameplay ${randomIndex + 1}.mp3`);
+        return gameplayTracks[randomIndex];
     }
 
     function playGameMusic() {
         // Marcar que estamos no contexto do jogo
         currentContext = 'game';
-        return playTrack(gameMusic);
+        
+        // Selecionar uma música de gameplay aleatória
+        const selectedTrack = getRandomGameplayTrack();
+        
+        // Configurar para tocar a próxima música quando esta terminar
+        selectedTrack.onended = function() {
+            console.log('Música de gameplay terminou, tocando próxima...');
+            playGameMusic(); // Recursivamente toca a próxima música
+        };
+        
+        return playTrack(selectedTrack);
     }
 
     function stopCurrentTrack() {
         if (currentTrack) {
             currentTrack.pause();
             currentTrack.currentTime = 0;
+            currentTrack.onended = null; // Limpar listener de fim de música
         }
         currentTrack = null;
         // NÃO resetar currentContext aqui - manter o contexto para evitar reiniciar música
@@ -99,13 +140,23 @@ const AudioManager = (function () {
             if (currentTrack) {
                 currentTrack.pause();
             }
-        } else if (userHasInteracted && pendingTrack) {
-            playTrack(pendingTrack);
-        } else if (userHasInteracted && currentTrack) {
-            // Se já tem uma música carregada, apenas retomar
-            currentTrack.play().catch(error => {
-                console.log('Não foi possível retomar áudio:', error.message);
-            });
+        } else if (userHasInteracted) {
+            // Retomar música baseado no contexto atual
+            if (currentContext === 'menu') {
+                // No menu, sempre chamar playMenuMusic para randomizar
+                playMenuMusic();
+            } else if (currentContext === 'game') {
+                // Na gameplay, sempre chamar playGameMusic para randomizar
+                playGameMusic();
+            } else if (currentTrack) {
+                // Se tem uma música carregada, apenas retomar
+                currentTrack.play().catch(error => {
+                    console.log('Não foi possível retomar áudio:', error.message);
+                });
+            } else {
+                // Se não tem contexto e não tem música, tocar menu por padrão
+                playMenuMusic();
+            }
         }
 
         return isMuted;
@@ -115,7 +166,9 @@ const AudioManager = (function () {
         menuTracks.forEach(track => {
             track.volume = volume;
         });
-        gameMusic.volume = volume;
+        gameplayTracks.forEach(track => {
+            track.volume = volume;
+        });
     }
 
     function getMutedState() {
