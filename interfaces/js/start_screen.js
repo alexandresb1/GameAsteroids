@@ -1,51 +1,37 @@
 const StartScreenHUD = (function () {
     let isLoaded = false;
 
-    function loadHTML() {
+    function updateAudioButtonStatus() {
+        const $btn = $('#audioToggleMenuBtn');
+        const isMuted = AudioManager.getMutedState();
+        const $status = $btn.find('#audioToggleStatus');
+        const $icon = $btn.find('.button-icon');
+        
+        if (isMuted) {
+            $btn.attr('data-audio-status', 'muted');
+            $status.text('DESATIVADO');
+            $icon.html('<i class="fas fa-volume-mute"></i>');
+        } else {
+            $btn.attr('data-audio-status', 'active');
+            $status.text('ATIVADO');
+            $icon.html('<i class="fas fa-volume-up"></i>');
+        }
+    }
+
+    function updateMobileToggleLabel(enabled) {
+        $('#mobileToggleStatus').text(enabled ? 'ON' : 'OFF');
+    }
+
+    async function loadHTML() {
         if (isLoaded) return;
 
         try {
-            // HTML embutido diretamente no JavaScript para evitar problemas de CORS
-            const html = `
-<div id="startScreenOverlay" class="interface-overlay">
-    <div class="start-screen-container">
-         <img src="assets/images/AsteroidsLogo.png" 
-             alt="Asteroids Logo" 
-             class="game-logo">
-
-        <!-- Botões do menu -->
-        <div class="menu-buttons">
-            <button id="startGameBtn" class="menu-button">
-                <span class="button-icon">▶</span>
-                <span class="button-text">JOGAR</span>
-            </button>
-            
-            <button id="customizeBtn" class="menu-button">
-                <span class="button-icon">⚙</span>
-                <span class="button-text">PERSONALIZAR</span>
-            </button>
-            
-            <button id="helpBtn" class="menu-button">
-                <span class="button-icon">?</span>
-                <span class="button-text">COMO JOGAR</span>
-            </button>
-
-            <button id="settingsBtn" class="menu-button">
-                <span class="button-icon">⚙</span>
-                <span class="button-text">CONFIGURAÇÕES</span>
-            </button>
-        </div>
-
-        <!-- Toggle Modo Mobile -->
-        <div class="mobile-mode-toggle">
-            <label class="toggle-container">
-                <input type="checkbox" id="mainMenuMobileToggle">
-                <span class="toggle-slider-main"></span>
-            </label>
-            <span id="mainMenuMobileStatus" class="toggle-label-main">📱 MODO MOBILE</span>
-        </div>
-    </div>
-</div>`;
+            // Carregar HTML do arquivo
+            const response = await fetch('interfaces/html/start_screen.html');
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar start_screen.html: ${response.status}`);
+            }
+            const html = await response.text();
 
             // Adicionar HTML ao body usando jQuery
             $('body').append(html);
@@ -59,7 +45,7 @@ const StartScreenHUD = (function () {
             // Configurar eventos dos botões usando jQuery
             $('#startGameBtn').on('click', function () {
                 hide();
-                AudioManager.playGameMusic();  // <---- música de gameplay
+                AudioManager.playGameMusic();
                 GameFunctions.start();
             });
 
@@ -85,28 +71,27 @@ const StartScreenHUD = (function () {
             });
 
             // Toggle Modo Mobile no menu principal
-            const $mainMobileToggle = $('#mainMenuMobileToggle');
-            const $mainMobileStatus = $('#mainMenuMobileStatus');
+            const $mobileToggleBtn = $('#mobileToggleBtn');
             
             // Carregar estado atual
             if (typeof ProgressionSystem !== 'undefined') {
                 const isMobile = ProgressionSystem.isMobileMode();
-                $mainMobileToggle.prop('checked', isMobile);
                 updateMobileToggleLabel(isMobile);
             }
             
-            $mainMobileToggle.on('change', function () {
-                const enabled = $(this).is(':checked');
+            $mobileToggleBtn.on('click', function () {
                 if (typeof ProgressionSystem !== 'undefined') {
-                    ProgressionSystem.setMobileMode(enabled);
-                    updateMobileToggleLabel(enabled);
+                    const currentState = ProgressionSystem.isMobileMode();
+                    ProgressionSystem.setMobileMode(!currentState);
+                    updateMobileToggleLabel(!currentState);
                 }
             });
 
-            function updateMobileToggleLabel(enabled) {
-                $mainMobileStatus.text(enabled ? '📱 MODO MOBILE: ON' : '📱 MODO MOBILE: OFF');
-                $mainMobileStatus.css('color', enabled ? '#00ff00' : '#00ffff');
-            }
+            // Evento do botão de áudio no menu
+            $('#audioToggleMenuBtn').on('click', function () {
+                AudioManager.toggleMute();
+                updateAudioButtonStatus();
+            });
 
             isLoaded = true;
         } catch (error) {
@@ -115,33 +100,32 @@ const StartScreenHUD = (function () {
     }
 
     function show() {
-        loadHTML();
+        loadHTML().then(() => {
+            // PROTEÇÃO: Destruir qualquer PauseHUD residual
+            if (typeof PauseHUD !== 'undefined') {
+                PauseHUD.destroy();
+            }
 
-        // PROTEÇÃO: Destruir qualquer PauseHUD residual
-        if (typeof PauseHUD !== 'undefined') {
-            PauseHUD.destroy();
-        }
+            const overlay = $('#startScreenOverlay');
+            overlay.css({ display: 'flex', opacity: 0 });
 
-        const overlay = $('#startScreenOverlay');
-        overlay.css({ display: 'flex', opacity: 0 });
+            // Atualizar estado do toggle mobile
+            if (typeof ProgressionSystem !== 'undefined') {
+                const isMobile = ProgressionSystem.isMobileMode();
+                updateMobileToggleLabel(isMobile);
+            }
 
-        // Atualizar estado do toggle mobile
-        if (typeof ProgressionSystem !== 'undefined') {
-            const isMobile = ProgressionSystem.isMobileMode();
-            $('#mainMenuMobileToggle').prop('checked', isMobile);
-            const $status = $('#mainMenuMobileStatus');
-            $status.text(isMobile ? '📱 MODO MOBILE: ON' : '📱 MODO MOBILE: OFF');
-            $status.css('color', isMobile ? '#00ff00' : '#00ffff');
-        }
+            // Atualizar status do botão de áudio
+            updateAudioButtonStatus();
 
-        // Tentar tocar música do menu (será controlado pelo AudioManager)
-        AudioManager.playMenuMusic();
+            // Tentar tocar música do menu (será controlado pelo AudioManager)
+            AudioManager.playMenuMusic();
 
-        setTimeout(() => {
-            overlay.css({ transition: 'opacity 0.8s', opacity: 1 });
-        }, 10);
+            setTimeout(() => {
+                overlay.css({ transition: 'opacity 0.8s', opacity: 1 });
+            }, 10);
+        });
     }
-
 
     function hide() {
         const $overlay = $('#startScreenOverlay');

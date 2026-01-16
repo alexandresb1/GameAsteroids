@@ -108,11 +108,6 @@ const AudioManager = (function () {
             });
         }
 
-        // Notificar mudança para atualizar UI
-        if (typeof AudioUI !== 'undefined') {
-            AudioUI.updateIcon();
-        }
-
         return isMuted;
     }
 
