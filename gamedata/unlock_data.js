@@ -155,6 +155,17 @@ const GameData = (function () {
             unlockRequirement: 1000,
             cooldown: 2.0, // segundos
             color: '#ff6600'
+        },
+        2: {
+            id: 2,
+            name: 'TIME FREEZE',
+            description: 'Congela todos os asteroides por 5 segundos, permitindo reposicionar a nave ou destruir asteroides parados. Desbloqueado ao atingir 3000 pontos em uma partida.',
+            icon: '⏸️',
+            sprite: 'assets/sprites/freezetime-powerup.png',
+            unlockType: 'highScore',
+            unlockRequirement: 3000,
+            cooldown: 15.0, // segundos
+            color: '#00ccff'
         }
     };
 

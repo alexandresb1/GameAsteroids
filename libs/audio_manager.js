@@ -24,7 +24,7 @@ const AudioManager = (function () {
     });
 
     let currentTrack = null;
-    let isMuted = true; // Começa mutado para evitar problemas de autoplay
+    let isMuted = false; // Começa com áudio ativado
     let userHasInteracted = false;
     let pendingTrack = null; // Para tocar depois da primeira interação
     let currentContext = null; // 'menu' ou 'game' - rastreia o contexto atual
