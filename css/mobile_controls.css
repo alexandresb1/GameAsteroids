@@ -46,6 +46,62 @@
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
 }
 
+/* Botão de Shield */
+.shield-button {
+    position: absolute;
+    bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+    right: calc(160px + env(safe-area-inset-right, 0px));
+    width: 100px;
+    height: 100px;
+    background: linear-gradient(145deg, rgba(0, 200, 255, 0.3), rgba(0, 150, 255, 0.3));
+    border: 3px solid #00c8ff;
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+    touch-action: none;
+    box-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
+    transition: all 0.2s ease;
+    z-index: 101;
+}
+
+.shield-button.pressed {
+    transform: scale(0.9);
+    background: linear-gradient(145deg, rgba(0, 200, 255, 0.6), rgba(0, 150, 255, 0.6));
+    box-shadow: 0 0 35px rgba(0, 200, 255, 0.8);
+}
+
+.shield-icon {
+    font-size: 2.5em;
+    color: #00c8ff;
+    text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+    margin-bottom: -5px;
+}
+
+.shield-label {
+    font-size: 0.6em;
+    color: #00c8ff;
+    font-family: 'Press Start 2P', cursive;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px rgba(0, 200, 255, 0.6);
+}
+
+/* Animação de pulso quando disponível */
+@keyframes shieldPulse {
+    0%, 100% {
+        box-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 35px rgba(0, 200, 255, 0.8);
+    }
+}
+
+.shield-button.available {
+    animation: shieldPulse 2s infinite;
+}
+
 /* Botão de Especial */
 .special-button {
     position: absolute;
@@ -120,6 +176,21 @@
         height: 40px;
     }
 
+    .shield-button {
+        bottom: 50px;
+        right: 130px;
+        width: 85px;
+        height: 85px;
+    }
+
+    .shield-icon {
+        font-size: 2em;
+    }
+
+    .shield-label {
+        font-size: 0.5em;
+    }
+
     .special-button {
         bottom: 50px;
         right: 30px;
@@ -154,6 +225,21 @@
         height: 35px;
     }
 
+    .shield-button {
+        bottom: 40px;
+        right: 110px;
+        width: 75px;
+        height: 75px;
+    }
+
+    .shield-icon {
+        font-size: 1.8em;
+    }
+
+    .shield-label {
+        font-size: 0.45em;
+    }
+
     .special-button {
         bottom: 40px;
         right: 20px;
@@ -175,6 +261,11 @@
     .joystick-area {
         bottom: 15px;
         left: 15px;
+    }
+
+    .shield-button {
+        bottom: 25px;
+        right: 110px;
     }
 
     .special-button {
