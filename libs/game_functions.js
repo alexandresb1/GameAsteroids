@@ -120,6 +120,19 @@ const GameFunctions = (function () {
     // SISTEMA DE ESPECIAIS DESBLOQUEÁVEIS
     let currentSpecialType = 'shockwave'; // Tipo atual do especial
     let currentSpecialCooldown = SPECIAL_COOLDOWN_TIME; // Cooldown atual baseado no especial selecionado
+
+    // SISTEMA DE ESCUDO
+    let shieldActive = false; // Se o escudo está ativo
+    let shieldDuration = 0; // Tempo restante do escudo ativo
+    let shieldCooldown = 0; // Tempo restante para usar escudo novamente (0 = disponível)
+    const SHIELD_DURATION = 4.0; // 4 segundos de proteção
+    const SHIELD_COOLDOWN_TIME = 10.0; // 10 segundos para recarregar
+
+    // SISTEMA DE TIME FREEZE (Congelamento de Tempo)
+    let timeFreezeActive = false; // Se o congelamento está ativo
+    let timeFreezeDuration = 0; // Tempo restante do congelamento
+    const TIME_FREEZE_DURATION = 5.0; // 5 segundos de congelamento
+    
     // FIM: VARIÁVEIS GLOBAIS DO JOGO.
 
     // INÍCIO: IMPORTAÇÃO DOS SPRITES.
@@ -334,6 +347,13 @@ const GameFunctions = (function () {
             if (e.key === KEY_SPECIAL && gameState === 'playing') {
                 if (specialCooldown <= 0) {
                     useSpecial();
+                }
+            }
+
+            // Escudo só dispara no keydown (tecla C)
+            if ((e.key === 'c' || e.key === 'C') && gameState === 'playing') {
+                if (shieldCooldown <= 0 && !shieldActive) {
+                    activateShield();
                 }
             }
             
@@ -617,10 +637,40 @@ const GameFunctions = (function () {
             case 'big_shot':
                 useBigShot();
                 break;
+            case 'time_freeze':
+                useTimeFreeze();
+                break;
             case 'shockwave':
             default:
                 useShockwave();
                 break;
+        }
+    }
+
+    function useTimeFreeze() {
+        // Ativar congelamento de tempo
+        timeFreezeActive = true;
+        timeFreezeDuration = TIME_FREEZE_DURATION;
+
+        console.log('⏸️ TIME FREEZE ATIVADO! Duração:', TIME_FREEZE_DURATION, 'segundos');
+
+        // Tocar som de ativação (se existir)
+        if (typeof SoundEffectsManager !== 'undefined' && SoundEffectsManager.playShoot) {
+            SoundEffectsManager.playShoot('shockwave'); // Usar som de shockwave como placeholder
+        }
+    }
+
+    function activateShield() {
+        // Ativar escudo
+        shieldActive = true;
+        shieldDuration = SHIELD_DURATION;
+        shieldCooldown = SHIELD_COOLDOWN_TIME;
+
+        console.log('🛡️ ESCUDO ATIVADO! Duração:', SHIELD_DURATION, 'segundos');
+
+        // Tocar som de ativação do escudo (se existir)
+        if (typeof SoundEffectsManager !== 'undefined' && SoundEffectsManager.playShield) {
+            SoundEffectsManager.playShield();
         }
     }
 
@@ -763,6 +813,9 @@ const GameFunctions = (function () {
 
         const spriteIndex = Math.floor(Math.random() * asteroidSprites.length);
 
+        // 5% de chance de spawnar um asteroide dourado
+        const isGolden = Math.random() < 0.05;
+
         // Calcular tamanho responsivo do asteroide
         const sizeScale = getGameScale();
         const baseRadius = 30 + Math.random() * 20;
@@ -776,10 +829,16 @@ const GameFunctions = (function () {
             velocityY: velocityY,
             sprite: asteroidSprites[spriteIndex],
             // Sistema de vida do asteroide
-            maxHealth: currentHitsPerAsteroid,
-            currentHealth: currentHitsPerAsteroid,
-            hitCooldown: 0 // Para evitar múltiplos hits simultâneos
+            maxHealth: isGolden ? currentHitsPerAsteroid * 2 : currentHitsPerAsteroid,
+            currentHealth: isGolden ? currentHitsPerAsteroid * 2 : currentHitsPerAsteroid,
+            hitCooldown: 0, // Para evitar múltiplos hits simultâneos
+            isGolden: isGolden, // Marca se é um asteroide dourado
+            scoreMultiplier: isGolden ? 10 : 1 // Asteroides dourados dão 10x mais pontos
         };
+
+        if (isGolden) {
+            console.log('🌟 Asteroide DOURADO spawnou! Vida:', asteroid.maxHealth, 'Pontos: 10x');
+        }
 
         asteroids.push(asteroid);
     }
@@ -886,6 +945,46 @@ const GameFunctions = (function () {
             specialCooldown -= deltaTime;
             if (specialCooldown < 0) {
                 specialCooldown = 0;
+            }
+        }
+    }
+
+    function updateShieldTimers(deltaTime) {
+        // Atualizar duração do escudo ativo
+        if (shieldActive && shieldDuration > 0) {
+            shieldDuration -= deltaTime;
+            if (shieldDuration <= 0) {
+                shieldActive = false;
+                shieldDuration = 0;
+                console.log('🛡️ Escudo desativado');
+            }
+        }
+
+        // Atualizar cooldown do escudo
+        if (shieldCooldown > 0) {
+            shieldCooldown -= deltaTime;
+            if (shieldCooldown < 0) {
+                shieldCooldown = 0;
+            }
+        }
+    }
+
+    function updateTimeFreezeTimers(deltaTime) {
+        // Atualizar duração do congelamento ativo
+        if (timeFreezeActive && timeFreezeDuration > 0) {
+            timeFreezeDuration -= deltaTime;
+            if (timeFreezeDuration <= 0) {
+                timeFreezeActive = false;
+                timeFreezeDuration = 0;
+                console.log('⏸️ Time Freeze desativado');
+            }
+        }
+
+        // Atualizar cooldown do Time Freeze
+        if (timeFreezeCooldown > 0) {
+            timeFreezeCooldown -= deltaTime;
+            if (timeFreezeCooldown < 0) {
+                timeFreezeCooldown = 0;
             }
         }
     }
@@ -999,19 +1098,22 @@ const GameFunctions = (function () {
         const playAreaBottom = height - hudBarHeight;
         
         asteroids.forEach((a, ai) => {
-            a.x += a.velocityX * deltaTime;
-            a.y += a.velocityY * deltaTime;
+            // Se Time Freeze está ativo, não mover asteroides
+            if (!timeFreezeActive) {
+                a.x += a.velocityX * deltaTime;
+                a.y += a.velocityY * deltaTime;
 
-            // Wrap horizontal (normal)
-            if (a.x > width) a.x = 0;
-            if (a.x < 0) a.x = width;
-            
-            // Wrap vertical (considerando as barras HUD)
-            if (a.y > playAreaBottom) a.y = playAreaTop;
-            if (a.y < playAreaTop) a.y = playAreaBottom;
+                // Wrap horizontal (normal)
+                if (a.x > width) a.x = 0;
+                if (a.x < 0) a.x = width;
+                
+                // Wrap vertical (considerando as barras HUD)
+                if (a.y > playAreaBottom) a.y = playAreaTop;
+                if (a.y < playAreaTop) a.y = playAreaBottom;
+            }
 
-            // Colisão com a nave (só se não estiver invulnerável)
-            if (!ship.invulnerable) {
+            // Colisão com a nave (só se não estiver invulnerável E sem escudo ativo)
+            if (!ship.invulnerable && !shieldActive) {
                 const shipDx = a.x - ship.x;
                 const shipDy = a.y - ship.y;
                 const shipDistance = Math.sqrt(shipDx * shipDx + shipDy * shipDy);
@@ -1061,7 +1163,14 @@ const GameFunctions = (function () {
                         // Remove asteroide
                         asteroids.splice(ai, 1);
 
-                        score += 10;
+                        // Adicionar pontos com multiplicador (asteroides dourados dão 10x mais)
+                        const pointsEarned = 10 * (a.scoreMultiplier || 1);
+                        score += pointsEarned;
+
+                        // Mostrar mensagem especial para asteroides dourados
+                        if (a.isGolden) {
+                            console.log(`🌟 ASTEROIDE DOURADO DESTRUÍDO! +${pointsEarned} pontos!`);
+                        }
 
                         // Verificar se deve mudar o background baseado no score
                         checkBackgroundChange();
@@ -1431,6 +1540,17 @@ const GameFunctions = (function () {
         updatePowerups(clampedDeltaTime);
         updateAmmoTimer(clampedDeltaTime);
         updateSpecialCooldown(clampedDeltaTime);
+        updateShieldTimers(clampedDeltaTime);
+        
+        // Atualizar duração do Time Freeze se estiver ativo
+        if (timeFreezeActive && timeFreezeDuration > 0) {
+            timeFreezeDuration -= clampedDeltaTime;
+            if (timeFreezeDuration <= 0) {
+                timeFreezeActive = false;
+                timeFreezeDuration = 0;
+                console.log('⏸️ Time Freeze desativado');
+            }
+        }
         
         // Verificar disparo contínuo (se barra de espaço está pressionada)
         updateShooting(currentTime);
@@ -1515,19 +1635,126 @@ const GameFunctions = (function () {
             ctx.globalAlpha = 1.0; // sempre resetar
         }
 
+        // ESCUDO (desenhar ao redor da nave se ativo)
+        if (shieldActive) {
+            ctx.save();
+            const pulseIntensity = 0.5 + Math.sin(Date.now() / 150) * 0.5;
+            const shieldRadius = ship.radius * 2;
+            
+            // Círculo externo do escudo (brilho)
+            ctx.strokeStyle = `rgba(0, 200, 255, ${0.6 * pulseIntensity})`;
+            ctx.lineWidth = 3;
+            ctx.shadowColor = '#00C8FF';
+            ctx.shadowBlur = 15 * pulseIntensity;
+            ctx.beginPath();
+            ctx.arc(ship.x, ship.y, shieldRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Círculo interno do escudo (preenchimento semi-transparente)
+            ctx.fillStyle = `rgba(0, 200, 255, ${0.15 * pulseIntensity})`;
+            ctx.beginPath();
+            ctx.arc(ship.x, ship.y, shieldRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        // TIME FREEZE (degrade azulado nas bordas do viewport)
+        if (timeFreezeActive) {
+            ctx.save();
+            
+            // Efeito de degrade azulado nas bordas
+            const pulseIntensity = 0.3 + Math.sin(Date.now() / 200) * 0.2;
+            const edgeWidth = 80;
+            
+            // Degrade superior
+            const topGradient = ctx.createLinearGradient(0, 0, 0, edgeWidth);
+            topGradient.addColorStop(0, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            topGradient.addColorStop(1, 'rgba(0, 204, 255, 0)');
+            ctx.fillStyle = topGradient;
+            ctx.fillRect(0, 0, canvas.width, edgeWidth);
+            
+            // Degrade inferior
+            const bottomGradient = ctx.createLinearGradient(0, canvas.height - edgeWidth, 0, canvas.height);
+            bottomGradient.addColorStop(0, 'rgba(0, 204, 255, 0)');
+            bottomGradient.addColorStop(1, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            ctx.fillStyle = bottomGradient;
+            ctx.fillRect(0, canvas.height - edgeWidth, canvas.width, edgeWidth);
+            
+            // Degrade esquerdo
+            const leftGradient = ctx.createLinearGradient(0, 0, edgeWidth, 0);
+            leftGradient.addColorStop(0, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            leftGradient.addColorStop(1, 'rgba(0, 204, 255, 0)');
+            ctx.fillStyle = leftGradient;
+            ctx.fillRect(0, 0, edgeWidth, canvas.height);
+            
+            // Degrade direito
+            const rightGradient = ctx.createLinearGradient(canvas.width - edgeWidth, 0, canvas.width, 0);
+            rightGradient.addColorStop(0, 'rgba(0, 204, 255, 0)');
+            rightGradient.addColorStop(1, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            ctx.fillStyle = rightGradient;
+            ctx.fillRect(canvas.width - edgeWidth, 0, edgeWidth, canvas.height);
+            
+            ctx.restore();
+        }
+
 
         // ASTEROIDES
         // ASTEROIDES COM SPRITES E BARRINHA DE VIDA
         asteroids.forEach(a => {
+            // Efeito visual para asteroides dourados
+            if (a.isGolden) {
+                ctx.save();
+                // Adicionar brilho dourado pulsante
+                const pulseIntensity = 0.5 + Math.sin(Date.now() / 200) * 0.5;
+                ctx.shadowColor = '#FFD700';
+                ctx.shadowBlur = 20 * pulseIntensity;
+                ctx.globalAlpha = 0.9 + pulseIntensity * 0.1;
+            } else if (timeFreezeActive) {
+                // Efeito visual para asteroides congelados (Time Freeze) - apenas se não for dourado
+                ctx.save();
+                // Adicionar brilho azulado pulsante
+                const pulseIntensity = 0.5 + Math.sin(Date.now() / 150) * 0.5;
+                ctx.shadowColor = '#00CCFF';
+                ctx.shadowBlur = 15 * pulseIntensity;
+                ctx.globalAlpha = 0.8 + pulseIntensity * 0.2;
+            }
+
             if (a.sprite && a.sprite.complete) {
                 const size = a.radius * 2; // largura e altura baseadas no raio
+                
+                // Se for dourado, aplicar filtro dourado
+                if (a.isGolden) {
+                    ctx.filter = 'sepia(1) saturate(3) hue-rotate(10deg) brightness(1.2)';
+                }
+                
+                // Se Time Freeze está ativo, aplicar filtro azulado
+                if (timeFreezeActive) {
+                    ctx.filter = 'hue-rotate(200deg) saturate(1.5) brightness(0.9)';
+                }
+                
                 ctx.drawImage(a.sprite, a.x - a.radius, a.y - a.radius, size, size);
+                
+                // Resetar filtro
+                if (a.isGolden || timeFreezeActive) {
+                    ctx.filter = 'none';
+                }
             } else {
                 // fallback (caso sprite não carregue)
-                ctx.fillStyle = 'gray';
+                if (timeFreezeActive) {
+                    ctx.fillStyle = '#00CCFF';
+                } else {
+                    ctx.fillStyle = a.isGolden ? '#FFD700' : 'gray';
+                }
                 ctx.beginPath();
                 ctx.arc(a.x, a.y, a.radius, 0, Math.PI * 2);
                 ctx.fill();
+            }
+
+            // Restaurar contexto se for dourado ou congelado
+            if (a.isGolden || timeFreezeActive) {
+                ctx.restore();
+                ctx.globalAlpha = 1.0; // Garantir que globalAlpha está resetado
             }
 
             // Desenhar barrinha de vida apenas se o asteroide tem mais de 1 hit
@@ -1536,13 +1763,19 @@ const GameFunctions = (function () {
                 const barHeight = 4;
                 const barY = a.y - a.radius - 10;
 
-                // Fundo da barra (vermelho)
-                ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                // Fundo da barra (vermelho, dourado ou azul se congelado)
+                let barColor = 'rgba(255, 0, 0, 0.7)';
+                if (a.isGolden) {
+                    barColor = 'rgba(255, 215, 0, 0.7)';
+                } else if (timeFreezeActive) {
+                    barColor = 'rgba(0, 204, 255, 0.7)';
+                }
+                ctx.fillStyle = barColor;
                 ctx.fillRect(a.x - barWidth / 2, barY, barWidth, barHeight);
 
-                // Vida atual (verde)
+                // Vida atual (verde ou ciano se congelado)
                 const healthPercent = a.currentHealth / a.maxHealth;
-                ctx.fillStyle = 'rgba(0, 255, 0, 0.8)';
+                ctx.fillStyle = timeFreezeActive ? 'rgba(0, 255, 255, 0.8)' : 'rgba(0, 255, 0, 0.8)';
                 ctx.fillRect(a.x - barWidth / 2, barY, barWidth * healthPercent, barHeight);
 
                 // Borda da barra
@@ -1721,8 +1954,8 @@ const GameFunctions = (function () {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Dividir em 3 seções: Powerup | Pause/ESC | Especial
-        const topSectionWidth = canvas.width / 3;
+        // Dividir em 4 seções: Powerup | Pause/ESC | Especial | Shield
+        const topSectionWidth = canvas.width / 4;
         
         // 1. POWERUP (esquerda)
         if (currentAmmoType !== 'normal' && ammoTimer > 0) {
@@ -1737,7 +1970,7 @@ const GameFunctions = (function () {
             }
         }
         
-        // 2. PAUSE (centro)
+        // 2. PAUSE (centro-esquerda)
         ctx.fillStyle = '#00ffff';
         ctx.font = `${fontSizeSm}px "Press Start 2P"`;
         ctx.fillText('PAUSE', topSectionWidth * 1.5, topBarCenterY - 10);
@@ -1745,7 +1978,7 @@ const GameFunctions = (function () {
         ctx.font = `${fontSizeMd}px "Press Start 2P"`;
         ctx.fillText('ESC / ⏸', topSectionWidth * 1.5, topBarCenterY + 8);
         
-        // 3. ESPECIAL (direita)
+        // 3. ESPECIAL (centro)
         ctx.fillStyle = '#00ffff';
         ctx.font = `${fontSizeSm}px "Press Start 2P"`;
         ctx.fillText('ESPECIAL', topSectionWidth * 2.5, topBarCenterY - 10);
@@ -1758,6 +1991,28 @@ const GameFunctions = (function () {
             ctx.fillStyle = '#ffaa00';
             ctx.font = `${fontSizeMd}px "Press Start 2P"`;
             ctx.fillText('PRONTO!', topSectionWidth * 2.5, topBarCenterY + 8);
+        }
+
+        // 4. SHIELD (centro-direita)
+        ctx.fillStyle = '#00ffff';
+        ctx.font = `${fontSizeSm}px "Press Start 2P"`;
+        ctx.fillText('SHIELD', topSectionWidth * 3.5, topBarCenterY - 10);
+        
+        if (shieldActive) {
+            // Mostrar tempo restante do escudo ativo
+            ctx.fillStyle = '#00ff00';
+            ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+            ctx.fillText(`${Math.ceil(shieldDuration)}s`, topSectionWidth * 3.5, topBarCenterY + 8);
+        } else if (shieldCooldown > 0) {
+            // Mostrar cooldown
+            ctx.fillStyle = '#888888';
+            ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+            ctx.fillText(`${Math.ceil(shieldCooldown)}s`, topSectionWidth * 3.5, topBarCenterY + 8);
+        } else {
+            // Pronto para usar
+            ctx.fillStyle = '#00C8FF';
+            ctx.font = `${fontSizeMd}px "Press Start 2P"`;
+            ctx.fillText('PRONTO!', topSectionWidth * 3.5, topBarCenterY + 8);
         }
         
         // ========== BARRA INFERIOR ==========
@@ -1824,6 +2079,47 @@ const GameFunctions = (function () {
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
 
+        // TIME FREEZE (degrade azulado nas bordas do viewport - desenhado por último)
+        if (timeFreezeActive) {
+            ctx.save();
+            ctx.globalAlpha = 1.0; // Garantir que globalAlpha está resetado
+            
+            // Efeito de degrade azulado nas bordas
+            const pulseIntensity = 0.3 + Math.sin(Date.now() / 200) * 0.2;
+            const edgeWidth = 80;
+            
+            // Degrade superior
+            const topGradient = ctx.createLinearGradient(0, 0, 0, edgeWidth);
+            topGradient.addColorStop(0, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            topGradient.addColorStop(1, 'rgba(0, 204, 255, 0)');
+            ctx.fillStyle = topGradient;
+            ctx.fillRect(0, 0, canvas.width, edgeWidth);
+            
+            // Degrade inferior
+            const bottomGradient = ctx.createLinearGradient(0, canvas.height - edgeWidth, 0, canvas.height);
+            bottomGradient.addColorStop(0, 'rgba(0, 204, 255, 0)');
+            bottomGradient.addColorStop(1, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            ctx.fillStyle = bottomGradient;
+            ctx.fillRect(0, canvas.height - edgeWidth, canvas.width, edgeWidth);
+            
+            // Degrade esquerdo
+            const leftGradient = ctx.createLinearGradient(0, 0, edgeWidth, 0);
+            leftGradient.addColorStop(0, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            leftGradient.addColorStop(1, 'rgba(0, 204, 255, 0)');
+            ctx.fillStyle = leftGradient;
+            ctx.fillRect(0, 0, edgeWidth, canvas.height);
+            
+            // Degrade direito
+            const rightGradient = ctx.createLinearGradient(canvas.width - edgeWidth, 0, canvas.width, 0);
+            rightGradient.addColorStop(0, 'rgba(0, 204, 255, 0)');
+            rightGradient.addColorStop(1, `rgba(0, 204, 255, ${0.4 * pulseIntensity})`);
+            ctx.fillStyle = rightGradient;
+            ctx.fillRect(canvas.width - edgeWidth, 0, edgeWidth, canvas.height);
+            
+            ctx.restore();
+            ctx.globalAlpha = 1.0; // Garantir que globalAlpha está resetado após restore
+        }
+
     }
     // FIM: FUNÇÃO PARA DESENHAR ELEMENTOS DO JOGO.
 
@@ -1834,6 +2130,25 @@ const GameFunctions = (function () {
     // Função getter para retornar o score atual
     function getScore() {
         return score;
+    }
+
+    // Funções getter para o escudo
+    function getShieldActive() {
+        return shieldActive;
+    }
+
+    function getShieldDuration() {
+        return shieldDuration;
+    }
+
+    function getShieldCooldown() {
+        return shieldCooldown;
+    }
+
+    function triggerShield() {
+        if (gameState === 'playing' && shieldCooldown <= 0 && !shieldActive) {
+            activateShield();
+        }
     }
 
     function getLives() {
@@ -1868,6 +2183,10 @@ const GameFunctions = (function () {
         getScore,  // Usar getter em vez de variável
         getGameState: () => gameState,  // Adicionar getter para gameState
         getLives,  // Usar getter em vez de variável
+        getShieldActive,
+        getShieldDuration,
+        getShieldCooldown,
+        triggerShield,
         gameState
     };
 })();

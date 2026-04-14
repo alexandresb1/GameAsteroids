@@ -6,92 +6,92 @@ const SettingsHUD = (function () {
 
         try {
             const html = `
-<div id="settingsOverlay" class="interface-overlay">
-    <div class="settings-container">
-        <h1 class="settings-title">CONFIGURAÇÕES</h1>
-        
-        <div class="settings-content">
-            <div class="settings-section">
-                <h2>GERENCIAR SAVE</h2>
-                <p class="settings-description">
-                    Exporte seu progresso para um arquivo JSON ou importe um save anterior.
-                </p>
-                <div class="save-buttons">
-                    <button id="exportSaveBtn" class="settings-button export-button">
-                        💾 EXPORTAR SAVE
-                    </button>
-                    <button id="importSaveBtn" class="settings-button import-button">
-                        📂 IMPORTAR SAVE
-                    </button>
-                </div>
-                <input type="file" id="importFileInput" accept=".json" style="display: none;">
-            </div>
+                <div id="settingsOverlay" class="interface-overlay">
+                    <div class="settings-container">
+                        <h1 class="settings-title">CONFIGURAÇÕES</h1>
+                        
+                        <div class="settings-content">
+                            <div class="settings-section">
+                                <h2>GERENCIAR SAVE</h2>
+                                <p class="settings-description">
+                                    Exporte seu progresso para um arquivo JSON ou importe um save anterior.
+                                </p>
+                                <div class="save-buttons">
+                                    <button id="exportSaveBtn" class="settings-button export-button">
+                                        💾 EXPORTAR SAVE
+                                    </button>
+                                    <button id="importSaveBtn" class="settings-button import-button">
+                                        📂 IMPORTAR SAVE
+                                    </button>
+                                </div>
+                                <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                            </div>
 
-            <div class="settings-section">
-                <h2>ÁUDIO</h2>
-                <p class="settings-description">
-                    Ative ou desative a música de fundo do jogo.
-                </p>
-                <div class="mobile-toggle">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="audioToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span id="audioStatus" class="toggle-label">DESATIVADO</span>
-                </div>
-            </div>
+                            <div class="settings-section">
+                                <h2>ÁUDIO</h2>
+                                <p class="settings-description">
+                                    Ative ou desative a música de fundo do jogo.
+                                </p>
+                                <div class="mobile-toggle">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="audioToggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span id="audioStatus" class="toggle-label">DESATIVADO</span>
+                                </div>
+                            </div>
 
-            <div class="settings-section">
-                <h2>MODO MOBILE</h2>
-                <p class="settings-description">
-                    Ative para usar controles touch (joystick virtual e tiro automático). Ideal para celulares e tablets.
-                </p>
-                <div class="mobile-toggle">
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="mobileToggle">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span id="mobileStatus" class="toggle-label">DESATIVADO</span>
-                </div>
-            </div>
+                            <div class="settings-section">
+                                <h2>MODO MOBILE</h2>
+                                <p class="settings-description">
+                                    Ative para usar controles touch (joystick virtual e tiro automático). Ideal para celulares e tablets.
+                                </p>
+                                <div class="mobile-toggle">
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="mobileToggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                    <span id="mobileStatus" class="toggle-label">DESATIVADO</span>
+                                </div>
+                            </div>
 
-            <div class="settings-section">
-                <h2>DADOS DO JOGO</h2>
-                <p class="settings-description">
-                    Cuidado! Esta ação apagará todo o seu progresso, incluindo recordes e naves desbloqueadas.
-                </p>
-                <button id="resetProgressBtn" class="settings-button danger-button">
-                    RESETAR PROGRESSO
-                </button>
-            </div>
-        </div>
+                            <div class="settings-section">
+                                <h2>DADOS DO JOGO</h2>
+                                <p class="settings-description">
+                                    Cuidado! Esta ação apagará todo o seu progresso, incluindo recordes e naves desbloqueadas.
+                                </p>
+                                <button id="resetProgressBtn" class="settings-button danger-button">
+                                    RESETAR PROGRESSO
+                                </button>
+                            </div>
+                        </div>
 
-        <div class="settings-footer">
-            <button id="backFromSettingsBtn" class="settings-button back-button">
-                VOLTAR
-            </button>
-        </div>
-    </div>
+                        <div class="settings-footer">
+                            <button id="backFromSettingsBtn" class="settings-button back-button">
+                                VOLTAR
+                            </button>
+                        </div>
+                    </div>
 
-    <!-- Modal de Confirmação -->
-    <div id="confirmModal" class="modal-overlay">
-        <div class="modal-container">
-            <h2 class="modal-title">TEM CERTEZA?</h2>
-            <p class="modal-text">
-                Isso apagará PERMANENTEMENTE todo o seu progresso.<br>
-                Esta ação não pode ser desfeita.
-            </p>
-            <div class="modal-buttons">
-                <button id="cancelResetBtn" class="modal-button cancel-button">
-                    CANCELAR
-                </button>
-                <button id="confirmResetBtn" class="modal-button confirm-button">
-                    SIM, APAGAR TUDO
-                </button>
-            </div>
-        </div>
-    </div>
-</div>`;
+                    <!-- Modal de Confirmação -->
+                    <div id="confirmModal" class="modal-overlay">
+                        <div class="modal-container">
+                            <h2 class="modal-title">TEM CERTEZA?</h2>
+                            <p class="modal-text">
+                                Isso apagará PERMANENTEMENTE todo o seu progresso.<br>
+                                Esta ação não pode ser desfeita.
+                            </p>
+                            <div class="modal-buttons">
+                                <button id="cancelResetBtn" class="modal-button cancel-button">
+                                    CANCELAR
+                                </button>
+                                <button id="confirmResetBtn" class="modal-button confirm-button">
+                                    SIM, APAGAR TUDO
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
 
             $('body').append(html);
 

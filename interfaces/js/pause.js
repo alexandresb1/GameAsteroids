@@ -1,70 +1,33 @@
 const PauseHUD = (function () {
     let isLoaded = false;
 
-    function loadHTML() {
+    function updateAudioButtonStatus() {
+        const $btn = $('#toggleAudioBtn');
+        const isMuted = AudioManager.getMutedState();
+        const $status = $btn.find('#pauseAudioStatus');
+        const $icon = $btn.find('.button-icon');
+        
+        if (isMuted) {
+            $btn.attr('data-audio-status', 'muted');
+            $status.text('DESATIVADA');
+            $icon.html('<i class="fas fa-volume-mute"></i>');
+        } else {
+            $btn.attr('data-audio-status', 'active');
+            $status.text('ATIVADA');
+            $icon.html('<i class="fas fa-volume-up"></i>');
+        }
+    }
+
+    async function loadHTML() {
         if (isLoaded) return;
 
         try {
-            // HTML embutido diretamente no JavaScript para evitar problemas de CORS
-            const html = `
-<div id="pauseOverlay" class="interface-overlay">
-    <div class="pause-container">
-        <h1 class="pause-title">JOGO PAUSADO</h1>
-        
-        <div class="pause-buttons">
-            <button id="resumeGameBtn" class="pause-button resume-button">
-                ▶️ Continuar
-            </button>
-            
-            <button id="toggleAudioBtn" class="pause-button audio-button">
-                🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>
-            </button>
-            
-            <button id="endGameBtn" class="pause-button end-button">
-                🏁 Finalizar Jogo
-            </button>
-            
-            <button id="backToMenuBtn" class="pause-button menu-button">
-                🏠 Menu Principal
-            </button>
-        </div>
-        
-        <div class="pause-instructions">
-            <p>Pressione <kbd>ESC</kbd> para continuar</p>
-        </div>
-    </div>
-    
-    <!-- Popup de confirmação de finalização -->
-    <div id="endGameConfirm" class="end-game-popup" style="display: none;">
-        <div class="end-game-content">
-            <h2 class="end-game-title">FINALIZAR JOGO?</h2>
-            
-            <div class="end-game-stats">
-                <div class="stat-item">
-                    <span class="stat-label">Score Atual:</span>
-                    <span id="currentScoreValue" class="stat-value">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Tempo de Jogo:</span>
-                    <span id="currentTimeValue" class="stat-value">0:00</span>
-                </div>
-            </div>
-            
-            <p class="end-game-warning">
-                Seu progresso será salvo e você voltará ao menu principal.
-            </p>
-            
-            <div class="end-game-buttons">
-                <button id="cancelEndBtn" class="end-game-button cancel-button">
-                    Cancelar
-                </button>
-                <button id="confirmEndBtn" class="end-game-button confirm-button">
-                    Finalizar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>`;
+            // Carregar HTML do arquivo
+            const response = await fetch('interfaces/html/pause.html');
+            if (!response.ok) {
+                throw new Error(`Erro ao carregar pause.html: ${response.status}`);
+            }
+            const html = await response.text();
 
             // Adicionar HTML ao body usando jQuery
             $('body').append(html);
@@ -100,17 +63,8 @@ const PauseHUD = (function () {
 
             $('#toggleAudioBtn').on('click', function () {
                 if (typeof AudioManager !== 'undefined') {
-                    const isMuted = AudioManager.toggleMute();
-                    const $status = $('#pauseAudioStatus');
-                    const $btn = $(this);
-                    
-                    if (isMuted) {
-                        $status.text('DESATIVADA');
-                        $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
-                    } else {
-                        $status.text('ATIVADA');
-                        $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
-                    }
+                    AudioManager.toggleMute();
+                    updateAudioButtonStatus();
                 }
             });
 
@@ -158,50 +112,40 @@ const PauseHUD = (function () {
             }
         }
         
-        loadHTML();
-
-        const $overlay = $('#pauseOverlay');
-        const $popup = $('#endGameConfirm');
-        
-        if ($overlay.length) {
-            // CRÍTICO: Limpar TODOS os estilos inline forçados
-            $overlay[0].removeAttribute('style');
+        loadHTML().then(() => {
+            const $overlay = $('#pauseOverlay');
+            const $popup = $('#endGameConfirm');
             
-            // Garantir que o popup está escondido
-            if ($popup.length) {
-                $popup.css('display', 'none');
-            }
-
-            $overlay.css({
-                display: 'flex',
-                opacity: 0
-            });
-            
-            // Atualizar estado do botão de áudio
-            if (typeof AudioManager !== 'undefined') {
-                const isMuted = AudioManager.getMutedState();
-                const $status = $('#pauseAudioStatus');
-                const $btn = $('#toggleAudioBtn');
+            if ($overlay.length) {
+                // CRÍTICO: Limpar TODOS os estilos inline forçados
+                $overlay[0].removeAttribute('style');
                 
-                if (isMuted) {
-                    $status.text('DESATIVADA');
-                    $btn.html('🔇 Música: <span id="pauseAudioStatus">DESATIVADA</span>');
-                } else {
-                    $status.text('ATIVADA');
-                    $btn.html('🔊 Música: <span id="pauseAudioStatus">ATIVADA</span>');
+                // Garantir que o popup está escondido
+                if ($popup.length) {
+                    $popup.css('display', 'none');
                 }
-            }
 
-            // Animação de entrada usando jQuery
-            setTimeout(() => {
                 $overlay.css({
-                    transition: 'opacity 0.3s ease',
-                    opacity: 1
+                    display: 'flex',
+                    opacity: 0
                 });
-            }, 10);
-            
-            console.log('PauseHUD show executado');
-        }
+                
+                // Atualizar estado do botão de áudio
+                if (typeof AudioManager !== 'undefined') {
+                    updateAudioButtonStatus();
+                }
+
+                // Animação de entrada usando jQuery
+                setTimeout(() => {
+                    $overlay.css({
+                        transition: 'opacity 0.3s ease',
+                        opacity: 1
+                    });
+                }, 10);
+                
+                console.log('PauseHUD show executado');
+            }
+        });
     }
 
     function hide() {

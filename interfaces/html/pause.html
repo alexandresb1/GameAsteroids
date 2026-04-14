@@ -4,16 +4,58 @@
         
         <div class="pause-buttons">
             <button id="resumeGameBtn" class="pause-button resume-button">
-                ▶️ Continuar
+                <span class="button-icon"><i class="fas fa-play"></i></span>
+                <span class="button-text">Continuar</span>
+            </button>
+            
+            <button id="toggleAudioBtn" class="pause-button audio-button" data-audio-status="active">
+                <span class="button-icon"><i class="fas fa-volume-up"></i></span>
+                <span class="button-text">Música: <span id="pauseAudioStatus">ATIVADA</span></span>
+            </button>
+            
+            <button id="endGameBtn" class="pause-button end-button">
+                <span class="button-icon"><i class="fas fa-flag-checkered"></i></span>
+                <span class="button-text">Finalizar Jogo</span>
             </button>
             
             <button id="backToMenuBtn" class="pause-button menu-button">
-                🏠 Menu Principal
+                <span class="button-icon"><i class="fas fa-home"></i></span>
+                <span class="button-text">Menu Principal</span>
             </button>
         </div>
         
         <div class="pause-instructions">
             <p>Pressione <kbd>ESC</kbd> para continuar</p>
+        </div>
+    </div>
+    
+    <div id="endGameConfirm" class="end-game-popup" style="display: none;">
+        <div class="end-game-content">
+            <h2 class="end-game-title">FINALIZAR JOGO?</h2>
+            
+            <div class="end-game-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Score Atual:</span>
+                    <span id="currentScoreValue" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tempo de Jogo:</span>
+                    <span id="currentTimeValue" class="stat-value">0:00</span>
+                </div>
+            </div>
+            
+            <p class="end-game-warning">
+                Seu progresso será salvo e você voltará ao menu principal.
+            </p>
+            
+            <div class="end-game-buttons">
+                <button id="cancelEndBtn" class="end-game-button cancel-button">
+                    Cancelar
+                </button>
+                <button id="confirmEndBtn" class="end-game-button confirm-button">
+                    Finalizar
+                </button>
+            </div>
         </div>
     </div>
 </div>
