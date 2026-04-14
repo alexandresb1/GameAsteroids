@@ -77,6 +77,11 @@ const MobileControls = (function () {
                     </div>
                 </div>
                 
+                <!-- Botão de Shield -->
+                <div id="shieldButton" class="shield-button">
+                    <span class="shield-icon">🛡️</span>
+                </div>
+                
                 <!-- Botão de Especial -->
                 <div id="specialButton" class="special-button">
                     <span class="special-icon">⚡</span>
@@ -117,6 +122,7 @@ const MobileControls = (function () {
     // Configurar eventos de touch
     function setupTouchEvents() {
         const $joystickArea = $('#joystickArea');
+        const $shieldButton = $('#shieldButton');
         const $specialButton = $('#specialButton');
 
         // Eventos do Joystick
@@ -124,6 +130,9 @@ const MobileControls = (function () {
         $joystickArea.on('touchmove', handleJoystickMove);
         $joystickArea.on('touchend touchcancel', handleJoystickEnd);
 
+        // Eventos do Botão Shield
+        $shieldButton.on('touchstart', handleShieldPress);
+        
         // Eventos do Botão Especial
         $specialButton.on('touchstart', handleSpecialPress);
         
@@ -240,6 +249,21 @@ const MobileControls = (function () {
         // Disparar especial no jogo
         if (typeof GameFunctions !== 'undefined') {
             GameFunctions.triggerSpecial();
+        }
+    }
+
+    // Handler do Botão Shield
+    function handleShieldPress(e) {
+        e.preventDefault();
+        
+        // Feedback visual
+        const $button = $('#shieldButton');
+        $button.addClass('pressed');
+        setTimeout(() => $button.removeClass('pressed'), 200);
+        
+        // Disparar shield no jogo
+        if (typeof GameFunctions !== 'undefined') {
+            GameFunctions.triggerShield();
         }
     }
 
