@@ -46,7 +46,6 @@
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
 }
 
-/* Botão de Shield */
 .shield-button {
     position: absolute;
     bottom: calc(60px + env(safe-area-inset-bottom, 0px));
